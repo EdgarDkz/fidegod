@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 import os
 from gestion import GestionDB
+from tkcalendar import DateEntry
 
 class Aplicacion:
     def __init__(self, root):
@@ -71,19 +72,39 @@ class Aplicacion:
 
         # Campos del formulario
         self.campos_persona = {}
-        campos = [('Nombre:', 'nombre'), ('Teléfono:', 'telefono'), 
-                ('Dirección:', 'direccion'), ('Municipio:', 'municipio'),
-                ('Fecha Petición:', 'fecha_peticion'), ('Fecha Entrega:', 'fecha_entrega')]
+        campos_normales = [
+            ('Nombre:', 'nombre'), 
+            ('Teléfono:', 'telefono'), 
+            ('Dirección:', 'direccion'), 
+            ('Municipio:', 'municipio')
+        ]
+        campos_fecha = [
+            ('Fecha Petición:', 'fecha_peticion'),
+            ('Fecha Entrega:', 'fecha_entrega')
+        ]
 
-        for i, (label, campo) in enumerate(campos):
+        # Crear campos normales (Entry)
+        for i, (label, campo) in enumerate(campos_normales):
             ttk.Label(self.frame_formulario, text=label).grid(row=i, column=0, padx=5, pady=2)
             entry = ttk.Entry(self.frame_formulario)
             entry.grid(row=i, column=1, padx=5, pady=2)
             self.campos_persona[campo] = entry
 
+        # Crear campos de fecha (DateEntry)
+        for i, (label, campo) in enumerate(campos_fecha, start=len(campos_normales)):
+            ttk.Label(self.frame_formulario, text=label).grid(row=i, column=0, padx=5, pady=2)
+            date_entry = DateEntry(self.frame_formulario, 
+                                 width=20,
+                                 background='darkblue',
+                                 foreground='white',
+                                 borderwidth=2,
+                                 date_pattern='yyyy-mm-dd')
+            date_entry.grid(row=i, column=1, padx=5, pady=2)
+            self.campos_persona[campo] = date_entry
+
         # Botones
         frame_botones = ttk.Frame(self.frame_formulario)
-        frame_botones.grid(row=len(campos), column=0, columnspan=2, pady=10)
+        frame_botones.grid(row=len(campos_normales) + len(campos_fecha), column=0, columnspan=2, pady=10)
 
         ttk.Button(frame_botones, text="Agregar", 
                 command=self.agregar_persona).pack(side='left', padx=5)
@@ -262,12 +283,21 @@ class Aplicacion:
             item = self.tree_personas.item(seleccion[0])
             valores = item['values']
             for i, (campo, entry) in enumerate(self.campos_persona.items()):
-                entry.delete(0, tk.END)
-                entry.insert(0, valores[i + 1])
+                if isinstance(entry, DateEntry):
+                    try:
+                        entry.set_date(valores[i + 1])
+                    except:
+                        entry.set_date(None)
+                else:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, valores[i + 1] if valores[i + 1] else '')
 
     def limpiar_campos_persona(self):
-        for entry in self.campos_persona.values():
-            entry.delete(0, tk.END)
+        for campo, entry in self.campos_persona.items():
+            if isinstance(entry, DateEntry):
+                entry.set_date(None)  # Limpiar campos de fecha
+            else:
+                entry.delete(0, tk.END)  # Limpiar campos normales
         if self.tree_personas.selection():
             self.tree_personas.selection_remove(self.tree_personas.selection())
 
