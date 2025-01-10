@@ -89,14 +89,14 @@ class GestionDB:
             conexion.close()
 
     # Funciones para gestión de inventario
-    def agregar_articulo(self, nombre_articulo, descripcion, cantidad_disponible, imagen, stock_minimo=5):
+    def agregar_articulo(self, nombre_articulo, descripcion, cantidad_disponible, imagen):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             cursor.execute('''
-            INSERT INTO inventario (nombre_articulo, descripcion, cantidad_disponible, imagen, stock_minimo)
-            VALUES (?, ?, ?, ?, ?)
-            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, stock_minimo))
+            INSERT INTO inventario (nombre_articulo, descripcion, cantidad_disponible, imagen)
+            VALUES (?, ?, ?, ?)
+            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen))
             conexion.commit()
             return True
         except Exception as e:
@@ -175,8 +175,7 @@ class GestionDB:
                     SELECT 
                         nombre_articulo as "Nombre Artículo",
                         descripcion as "Descripción",
-                        cantidad_disponible as "Cantidad",
-                        stock_minimo as "Stock Mínimo"
+                        cantidad_disponible as "Cantidad"
                     FROM inventario
                     ORDER BY nombre_articulo
                 ''', conexion)
@@ -233,6 +232,74 @@ class GestionDB:
             FROM inventario 
             WHERE cantidad_disponible <= stock_minimo
             ''')
+            return cursor.fetchall()
+        finally:
+            conexion.close()
+
+    def obtener_articulo(self, id):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('SELECT * FROM inventario WHERE id=?', (id,))
+            return cursor.fetchone()
+        finally:
+            conexion.close()
+
+    def actualizar_articulo(self, id, nombre_articulo, descripcion, cantidad_disponible, imagen):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('''
+            UPDATE inventario 
+            SET nombre_articulo=?, descripcion=?, cantidad_disponible=?, imagen=?
+            WHERE id=?
+            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, id))
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al actualizar artículo: {e}")
+            return False
+        finally:
+            conexion.close()
+
+    def eliminar_articulo(self, id):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            
+            # Primero eliminamos el artículo seleccionado
+            cursor.execute('DELETE FROM inventario WHERE id=?', (id,))
+            
+            # Actualizamos los IDs de los registros posteriores
+            cursor.execute('''
+                UPDATE inventario 
+                SET id = id - 1 
+                WHERE id > ?
+            ''', (id,))
+            
+            # Reiniciamos la secuencia del autoincremento
+            cursor.execute('''
+                UPDATE sqlite_sequence 
+                SET seq = (SELECT MAX(id) FROM inventario) 
+                WHERE name = 'inventario'
+            ''')
+            
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al eliminar artículo: {e}")
+            return False
+        finally:
+            conexion.close()
+
+    def buscar_articulos(self, filtro):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('''
+                SELECT * FROM inventario 
+                WHERE nombre_articulo LIKE ? OR descripcion LIKE ?
+            ''', (f'%{filtro}%', f'%{filtro}%'))
             return cursor.fetchall()
         finally:
             conexion.close()

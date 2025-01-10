@@ -24,8 +24,7 @@ def crear_base_datos():
         nombre_articulo TEXT NOT NULL,
         descripcion TEXT,
         cantidad_disponible INTEGER DEFAULT 0,
-        imagen TEXT,
-        stock_minimo INTEGER DEFAULT 5
+        imagen TEXT
     )
     ''')
 

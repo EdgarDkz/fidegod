@@ -1,9 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from gestion import GestionDB
-from datetime import datetime
-import os
 from PIL import Image, ImageTk
+import os
+from gestion import GestionDB
 
 class Aplicacion:
     def __init__(self, root):
@@ -102,8 +101,94 @@ class Aplicacion:
         self.actualizar_lista_personas()
 
     def setup_inventario_tab(self):
-        # Similar al setup_personas_tab pero para inventario
-        pass
+        # Frame para búsqueda
+        frame_busqueda = ttk.LabelFrame(self.tab_inventario, text="Búsqueda")
+        frame_busqueda.pack(fill='x', padx=5, pady=5)
+        
+        ttk.Label(frame_busqueda, text="Buscar:").pack(side='left', padx=5)
+        self.entry_busqueda_inventario = ttk.Entry(frame_busqueda)
+        self.entry_busqueda_inventario.pack(side='left', padx=5)
+        ttk.Button(frame_busqueda, text="Buscar", 
+                command=self.buscar_articulos).pack(side='left', padx=5)
+        
+        # Frame principal dividido en dos
+        frame_principal = ttk.PanedWindow(self.tab_inventario, orient=tk.HORIZONTAL)
+        frame_principal.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Frame izquierdo para el formulario y la imagen
+        frame_izquierdo = ttk.LabelFrame(frame_principal, text="Detalles del Artículo")
+        frame_principal.add(frame_izquierdo)
+        
+        # Frame derecho para el TreeView
+        frame_derecho = ttk.Frame(frame_principal)
+        frame_principal.add(frame_derecho)
+        
+        # Campos del formulario
+        self.campos_inventario = {}
+        campos = [
+            ('Nombre del Artículo:', 'nombre_articulo'),
+            ('Descripción:', 'descripcion'),
+            ('Cantidad Disponible:', 'cantidad_disponible')
+        ]
+        
+        for i, (label, campo) in enumerate(campos):
+            ttk.Label(frame_izquierdo, text=label).grid(row=i, column=0, padx=5, pady=2)
+            entry = ttk.Entry(frame_izquierdo)
+            entry.grid(row=i, column=1, padx=5, pady=2)
+            self.campos_inventario[campo] = entry
+        
+        # Frame para la imagen
+        frame_imagen = ttk.LabelFrame(frame_izquierdo, text="Imagen del Artículo")
+        frame_imagen.grid(row=len(campos), column=0, columnspan=2, padx=5, pady=5)
+        
+        # Label para mostrar la imagen
+        self.label_imagen = ttk.Label(frame_imagen)
+        self.label_imagen.pack(padx=5, pady=5)
+        
+        # Variable para guardar la ruta de la imagen
+        self.ruta_imagen = None
+        
+        # Botones para la imagen
+        ttk.Button(frame_imagen, text="Seleccionar Imagen", 
+                command=self.seleccionar_imagen).pack(side='left', padx=5)
+        ttk.Button(frame_imagen, text="Eliminar Imagen", 
+                command=self.eliminar_imagen).pack(side='left', padx=5)
+        
+        # Botones de acción
+        frame_botones = ttk.Frame(frame_izquierdo)
+        frame_botones.grid(row=len(campos)+1, column=0, columnspan=2, pady=10)
+        
+        ttk.Button(frame_botones, text="Agregar", 
+                command=self.agregar_articulo).pack(side='left', padx=5)
+        ttk.Button(frame_botones, text="Actualizar", 
+                command=self.actualizar_articulo).pack(side='left', padx=5)
+        ttk.Button(frame_botones, text="Eliminar", 
+                command=self.eliminar_articulo).pack(side='left', padx=5)
+        ttk.Button(frame_botones, text="Limpiar", 
+                command=self.limpiar_campos_inventario).pack(side='left', padx=5)
+        
+        # Crear Treeview
+        self.tree_inventario = ttk.Treeview(frame_derecho, 
+                columns=('ID', 'Nombre', 'Descripción', 'Cantidad'),
+                show='headings')
+        
+        # Configurar columnas
+        for col in self.tree_inventario['columns']:
+            self.tree_inventario.heading(col, text=col)
+            self.tree_inventario.column(col, width=100)
+        
+        # Agregar scrollbar
+        scrollbar = ttk.Scrollbar(frame_derecho, orient='vertical', 
+                command=self.tree_inventario.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.tree_inventario.configure(yscrollcommand=scrollbar.set)
+        self.tree_inventario.pack(fill='both', expand=True)
+        
+        # Bind para selección en el TreeView
+        self.tree_inventario.bind('<<TreeviewSelect>>', self.seleccionar_articulo)
+        
+        # Cargar datos iniciales
+        self.actualizar_lista_inventario()
 
     def setup_transacciones_tab(self):
         # Implementar vista de transacciones
@@ -194,9 +279,163 @@ class Aplicacion:
                 mensaje += f"- {item[0]}: {item[1]} unidades (mínimo: {item[2]})\n"
             messagebox.showwarning("Alerta de Stock", mensaje)
 
+    def seleccionar_imagen(self):
+        ruta = filedialog.askopenfilename(
+            filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
+        )
+        if ruta:
+            self.ruta_imagen = ruta
+            # Mostrar la imagen en el label
+            imagen = Image.open(ruta)
+            imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)  # Redimensionar
+            foto = ImageTk.PhotoImage(imagen)
+            self.label_imagen.configure(image=foto)
+            self.label_imagen.image = foto  # Mantener referencia
+
+    def eliminar_imagen(self):
+        if self.ruta_imagen:  # Solo preguntar si hay una imagen
+            if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen del artículo?"):
+                self.ruta_imagen = None
+                self.label_imagen.configure(image='')
+                self.label_imagen.image = None
+
+    def agregar_articulo(self):
+        valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
+        if not valores['nombre_articulo']:
+            messagebox.showwarning("Error", "El nombre del artículo es obligatorio")
+            return
+        
+        # Validar que cantidad y stock mínimo sean números
+        try:
+            valores['cantidad_disponible'] = int(valores['cantidad_disponible'])
+        except ValueError:
+            messagebox.showwarning("Error", "La cantidad debe ser un número")
+            return
+        
+        # Guardar la imagen si existe
+        if self.ruta_imagen:
+            nombre_archivo = f"imagenes/{os.path.basename(self.ruta_imagen)}"
+            os.makedirs("imagenes", exist_ok=True)
+            Image.open(self.ruta_imagen).save(nombre_archivo)
+            valores['imagen'] = nombre_archivo
+        else:
+            valores['imagen'] = None
+        
+        if self.db.agregar_articulo(**valores):
+            messagebox.showinfo("Éxito", "Artículo agregado correctamente")
+            self.limpiar_campos_inventario()
+            self.actualizar_lista_inventario()
+        else:
+            messagebox.showerror("Error", "No se pudo agregar el artículo")
+
+    def actualizar_lista_inventario(self):
+        for item in self.tree_inventario.get_children():
+            self.tree_inventario.delete(item)
+        articulos = self.db.obtener_inventario()
+        for articulo in articulos:
+            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen
+
+    def seleccionar_articulo(self, event):
+        seleccion = self.tree_inventario.selection()
+        if seleccion:
+            item = self.tree_inventario.item(seleccion[0])
+            valores = item['values']
+            
+            # Llenar campos
+            for i, (campo, entry) in enumerate(self.campos_inventario.items()):
+                entry.delete(0, tk.END)
+                entry.insert(0, valores[i + 1])
+            
+            # Cargar imagen si existe
+            articulo = self.db.obtener_articulo(valores[0])
+            if articulo and articulo[4]:  # Si hay ruta de imagen
+                self.ruta_imagen = articulo[4]
+                try:
+                    imagen = Image.open(self.ruta_imagen)
+                    imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
+                    foto = ImageTk.PhotoImage(imagen)
+                    self.label_imagen.configure(image=foto)
+                    self.label_imagen.image = foto
+                except:
+                    self.ruta_imagen = None
+                    self.label_imagen.configure(image='')
+
+    def buscar_articulos(self):
+        filtro = self.entry_busqueda_inventario.get()
+        for item in self.tree_inventario.get_children():
+            self.tree_inventario.delete(item)
+        articulos = self.db.obtener_inventario(filtro)
+        for articulo in articulos:
+            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen
+
+    def limpiar_campos_inventario(self):
+        for entry in self.campos_inventario.values():
+            entry.delete(0, tk.END)
+        self.eliminar_imagen()
+        if self.tree_inventario.selection():
+            self.tree_inventario.selection_remove(self.tree_inventario.selection())
+
+    def eliminar_articulo(self):
+        seleccion = self.tree_inventario.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione un artículo para eliminar")
+            return
+        
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar este artículo?"):
+            item = self.tree_inventario.item(seleccion[0])
+            id_articulo = item['values'][0]
+            
+            # Eliminar la imagen si existe
+            articulo = self.db.obtener_articulo(id_articulo)
+            if articulo and articulo[4]:  # Si hay imagen
+                try:
+                    os.remove(articulo[4])
+                except:
+                    pass
+            
+            if self.db.eliminar_articulo(id_articulo):
+                messagebox.showinfo("Éxito", "Artículo eliminado correctamente")
+                self.limpiar_campos_inventario()
+                self.actualizar_lista_inventario()
+            else:
+                messagebox.showerror("Error", "No se pudo eliminar el artículo")
+
+    def actualizar_articulo(self):
+        seleccion = self.tree_inventario.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione un artículo para actualizar")
+            return
+        
+        item = self.tree_inventario.item(seleccion[0])
+        id_articulo = item['values'][0]
+        valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
+        
+        # Validar campos numéricos
+        try:
+            valores['cantidad_disponible'] = int(valores['cantidad_disponible'])
+        except ValueError:
+            messagebox.showwarning("Error", "La cantidad debe ser un número")
+            return
+        
+        # Manejar la imagen
+        if self.ruta_imagen:
+            nombre_archivo = f"imagenes/{os.path.basename(self.ruta_imagen)}"
+            os.makedirs("imagenes", exist_ok=True)
+            if self.ruta_imagen != nombre_archivo:
+                Image.open(self.ruta_imagen).save(nombre_archivo)
+            valores['imagen'] = nombre_archivo
+        else:
+            articulo = self.db.obtener_articulo(id_articulo)
+            valores['imagen'] = articulo[4] if articulo else None
+        
+        if self.db.actualizar_articulo(id_articulo, **valores):
+            messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
+            self.limpiar_campos_inventario()
+            self.actualizar_lista_inventario()
+        else:
+            messagebox.showerror("Error", "No se pudo actualizar el artículo")
+
 if __name__ == "__main__":
     root = tk.Tk()
     app = Aplicacion(root)
     root.mainloop()
-
-print("Hola")
