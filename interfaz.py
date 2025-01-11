@@ -29,7 +29,7 @@ class Aplicacion:
         
         # Botón para abrir la ventana de transacciones
         ttk.Button(self.tab_transacciones, text="Registrar Transacción", 
-                command=lambda: abrir_ventana_transacciones(self.db)).pack(pady=10)
+                command=lambda: abrir_ventana_transacciones(self, self.db)).pack(pady=10)
         
         # Inicializar componentes
         self.setup_personas_tab()
@@ -566,8 +566,9 @@ class Aplicacion:
             self.tree_transacciones.insert('', 'end', values=transaccion)
 
 class VentanaTransacciones:
-    def __init__(self, master, db):
+    def __init__(self, master, app, db):
         self.master = master
+        self.app = app  # Guardar referencia a la instancia principal
         self.db = db
         self.master.title("Registrar Transacción")
         self.master.geometry("400x300")  # Tamaño de la ventana
@@ -627,17 +628,17 @@ class VentanaTransacciones:
             # Lógica para registrar la transacción
             if self.db.registrar_transaccion(id_articulo, tipo, int(cantidad)):
                 messagebox.showinfo("Transacción", "Transacción registrada con éxito.")
-                # Actualizar el TreeView
-                self.master.actualizar_lista_transacciones()  # Asegúrate de que esto funcione
+                # Actualizar el TreeView en la instancia principal
+                self.app.actualizar_lista_transacciones()  # Usar la referencia a la instancia principal
             else:
                 messagebox.showerror("Error", "No se pudo registrar la transacción.")
         else:
             messagebox.showwarning("Advertencia", "Seleccione un artículo válido.")
 
 # Para abrir la ventana de transacciones
-def abrir_ventana_transacciones(db):
+def abrir_ventana_transacciones(app, db):
     ventana = tk.Toplevel()
-    VentanaTransacciones(ventana, db)
+    VentanaTransacciones(ventana, app, db)
 
 if __name__ == "__main__":
     root = tk.Tk()
