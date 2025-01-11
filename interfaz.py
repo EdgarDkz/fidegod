@@ -31,8 +31,7 @@ class Aplicacion:
         self.setup_inventario_tab()
         self.setup_transacciones_tab()
         
-        # Verificar stock mínimo al inicio
-        self.verificar_stock_minimo()
+
 
     def setup_personas_tab(self):
         # Frame para búsqueda
@@ -136,31 +135,39 @@ class Aplicacion:
         frame_principal = ttk.PanedWindow(self.tab_inventario, orient=tk.HORIZONTAL)
         frame_principal.pack(fill='both', expand=True, padx=5, pady=5)
         
-        # Frame izquierdo para el formulario y la imagen
-        frame_izquierdo = ttk.LabelFrame(frame_principal, text="Detalles del Artículo")
-        frame_principal.add(frame_izquierdo)
-        
-        # Frame derecho para el TreeView
-        frame_derecho = ttk.Frame(frame_principal)
-        frame_principal.add(frame_derecho)
+        # Frame para detalles del artículo
+        self.frame_detalles_articulo = ttk.LabelFrame(self.tab_inventario, text="Detalles del Artículo")
+        self.frame_detalles_articulo.pack(fill='x', padx=5, pady=5)
         
         # Campos del formulario
         self.campos_inventario = {}
-        campos = [
-            ('Nombre del Artículo:', 'nombre_articulo'),
-            ('Descripción:', 'descripcion'),
-            ('Cantidad Disponible:', 'cantidad_disponible')
+        campos_normales = [
+            ('Nombre del Artículo:', 'nombre_articulo'), 
+            ('Descripción:', 'descripcion'), 
+            ('Cantidad Disponible:', 'cantidad_disponible'),
+            ('Fecha de Ingreso:', 'fecha_ingreso')  # Asegúrate de que este campo esté aquí
         ]
         
-        for i, (label, campo) in enumerate(campos):
-            ttk.Label(frame_izquierdo, text=label).grid(row=i, column=0, padx=5, pady=2)
-            entry = ttk.Entry(frame_izquierdo)
-            entry.grid(row=i, column=1, padx=5, pady=2)
-            self.campos_inventario[campo] = entry
+        # Crear campos normales (Entry y DateEntry)
+        for i, (label, campo) in enumerate(campos_normales):
+            ttk.Label(self.frame_detalles_articulo, text=label).grid(row=i, column=0, padx=5, pady=2)
+            if campo == 'fecha_ingreso':
+                date_entry = DateEntry(self.frame_detalles_articulo, 
+                                       width=20,
+                                       background='darkblue',
+                                       foreground='white',
+                                       borderwidth=2,
+                                       date_pattern='yyyy-mm-dd')
+                date_entry.grid(row=i, column=1, padx=5, pady=2)
+                self.campos_inventario[campo] = date_entry
+            else:
+                entry = ttk.Entry(self.frame_detalles_articulo)
+                entry.grid(row=i, column=1, padx=5, pady=2)
+                self.campos_inventario[campo] = entry
         
         # Frame para la imagen
-        frame_imagen = ttk.LabelFrame(frame_izquierdo, text="Imagen del Artículo")
-        frame_imagen.grid(row=len(campos), column=0, columnspan=2, padx=5, pady=5)
+        frame_imagen = ttk.LabelFrame(self.frame_detalles_articulo, text="Imagen del Artículo")
+        frame_imagen.grid(row=len(campos_normales), column=0, columnspan=2, padx=5, pady=5)
         
         # Label para mostrar la imagen
         self.label_imagen = ttk.Label(frame_imagen)
@@ -176,8 +183,8 @@ class Aplicacion:
                 command=self.eliminar_imagen).pack(side='left', padx=5)
         
         # Botones de acción
-        frame_botones = ttk.Frame(frame_izquierdo)
-        frame_botones.grid(row=len(campos)+1, column=0, columnspan=2, pady=10)
+        frame_botones = ttk.Frame(self.frame_detalles_articulo)
+        frame_botones.grid(row=len(campos_normales)+1, column=0, columnspan=2, pady=10)
         
         ttk.Button(frame_botones, text="Agregar", 
                 command=self.agregar_articulo).pack(side='left', padx=5)
@@ -189,18 +196,15 @@ class Aplicacion:
                 command=self.limpiar_campos_inventario).pack(side='left', padx=5)
         
         # Crear Treeview
-        self.tree_inventario = ttk.Treeview(frame_derecho, 
-                columns=('ID', 'Nombre', 'Descripción', 'Cantidad'),
-                show='headings')
-        
+        self.tree_inventario = ttk.Treeview(frame_principal, columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha de Ingreso'), show='headings')
+
         # Configurar columnas
         for col in self.tree_inventario['columns']:
             self.tree_inventario.heading(col, text=col)
             self.tree_inventario.column(col, width=100)
         
         # Agregar scrollbar
-        scrollbar = ttk.Scrollbar(frame_derecho, orient='vertical', 
-                command=self.tree_inventario.yview)
+        scrollbar = ttk.Scrollbar(frame_principal, orient='vertical', command=self.tree_inventario.yview)
         scrollbar.pack(side='right', fill='y')
         self.tree_inventario.configure(yscrollcommand=scrollbar.set)
         self.tree_inventario.pack(fill='both', expand=True)
@@ -301,13 +305,6 @@ class Aplicacion:
         if self.tree_personas.selection():
             self.tree_personas.selection_remove(self.tree_personas.selection())
 
-    def verificar_stock_minimo(self):
-        items_bajo_stock = self.db.verificar_stock_minimo()
-        if items_bajo_stock:
-            mensaje = "Los siguientes artículos están bajo el stock mínimo:\n\n"
-            for item in items_bajo_stock:
-                mensaje += f"- {item[0]}: {item[1]} unidades (mínimo: {item[2]})\n"
-            messagebox.showwarning("Alerta de Stock", mensaje)
 
     def seleccionar_imagen(self):
         ruta = filedialog.askopenfilename(
@@ -347,7 +344,8 @@ class Aplicacion:
                     nombre_articulo=articulo[1],  # Mantener el nombre del artículo
                     descripcion=articulo[2],        # Mantener la descripción
                     cantidad_disponible=articulo[3],  # Mantener la cantidad
-                    imagen=None  # Eliminar la imagen
+                    imagen=None,  # Eliminar la imagen
+                    fecha_ingreso=articulo[5]  # Asegúrate de pasar la fecha de ingreso
                 ):
                     # Limpiar la imagen en la interfaz
                     self.label_imagen.configure(image='')
@@ -366,18 +364,15 @@ class Aplicacion:
 
     def agregar_articulo(self):
         valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
-        if not valores['nombre_articulo']:
-            messagebox.showwarning("Error", "El nombre del artículo es obligatorio")
-            return
         
-        # Validar que cantidad y stock mínimo sean números
+        # Validar campos numéricos
         try:
             valores['cantidad_disponible'] = int(valores['cantidad_disponible'])
         except ValueError:
             messagebox.showwarning("Error", "La cantidad debe ser un número")
             return
         
-        # Guardar la imagen si existe
+        # Manejar la imagen
         if self.ruta_imagen:
             nombre_archivo = f"imagenes/{os.path.basename(self.ruta_imagen)}"
             os.makedirs("imagenes", exist_ok=True)
@@ -386,7 +381,10 @@ class Aplicacion:
         else:
             valores['imagen'] = None
         
-        if self.db.agregar_articulo(**valores):
+        # Asegúrate de incluir la fecha de ingreso
+        fecha_ingreso = valores.pop('fecha_ingreso', None)  # Extraer la fecha de ingreso
+
+        if self.db.agregar_articulo(**valores, fecha_ingreso=fecha_ingreso):
             messagebox.showinfo("Éxito", "Artículo agregado correctamente")
             self.limpiar_campos_inventario()
             self.actualizar_lista_inventario()
@@ -406,14 +404,16 @@ class Aplicacion:
             if articulo[4]:  # Si existe la imagen
                 imagen_texto = "Ver"  # Texto para indicar que hay una imagen
             else:
-                imagen_texto = "Sin imagen"  # Texto si no hay imagen
+                imagen_texto = ""  # Texto si no hay imagen
 
+            # Asegúrate de que el índice para la fecha de ingreso sea correcto
             valores = (
                 articulo[0],  # ID
                 articulo[1],  # Nombre
                 articulo[2],  # Descripción
                 articulo[3],  # Cantidad
-                imagen_texto   # Texto para la imagen
+                imagen_texto,  # Texto para la imagen
+                articulo[5]    # Fecha de Ingreso (asegúrate de que este índice sea correcto)
             )
             self.tree_inventario.insert('', 'end', values=valores)
 
@@ -426,7 +426,7 @@ class Aplicacion:
             # Llenar campos
             for i, (campo, entry) in enumerate(self.campos_inventario.items()):
                 entry.delete(0, tk.END)
-                entry.insert(0, valores[i + 1])
+                entry.insert(0, valores[i + 1])  # Asegúrate de que esto esté correcto
             
             # Cargar imagen si existe
             articulo = self.db.obtener_articulo(valores[0])
@@ -522,7 +522,10 @@ class Aplicacion:
             articulo = self.db.obtener_articulo(id_articulo)
             valores['imagen'] = articulo[4] if articulo else None
         
-        if self.db.actualizar_articulo(id_articulo, **valores):
+        # Asegúrate de incluir la fecha de ingreso
+        fecha_ingreso = valores.pop('fecha_ingreso', None)  # Extraer la fecha de ingreso
+
+        if self.db.actualizar_articulo(id_articulo, **valores, fecha_ingreso=fecha_ingreso):
             messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
             self.limpiar_campos_inventario()
             self.actualizar_lista_inventario()

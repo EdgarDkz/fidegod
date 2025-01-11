@@ -17,14 +17,18 @@ def crear_base_datos():
     )
     ''')
 
-    # Crear tabla inventario
+    # Eliminar la tabla si ya existe
+    cursor.execute('DROP TABLE IF EXISTS inventario;')
+
+    # Crear tabla inventario con la nueva columna
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS inventario (
+    CREATE TABLE inventario (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre_articulo TEXT NOT NULL,
         descripcion TEXT,
         cantidad_disponible INTEGER DEFAULT 0,
-        imagen TEXT
+        imagen TEXT,
+        fecha_ingreso DATE
     )
     ''')
 

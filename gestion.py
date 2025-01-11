@@ -89,14 +89,14 @@ class GestionDB:
             conexion.close()
 
     # Funciones para gestión de inventario
-    def agregar_articulo(self, nombre_articulo, descripcion, cantidad_disponible, imagen):
+    def agregar_articulo(self, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             cursor.execute('''
-            INSERT INTO inventario (nombre_articulo, descripcion, cantidad_disponible, imagen)
-            VALUES (?, ?, ?, ?)
-            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen))
+                INSERT INTO inventario (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso))
             conexion.commit()
             return True
         except Exception as e:
@@ -223,19 +223,6 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def verificar_stock_minimo(self):
-        try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
-            cursor.execute('''
-            SELECT nombre_articulo, cantidad_disponible, stock_minimo 
-            FROM inventario 
-            WHERE cantidad_disponible <= stock_minimo
-            ''')
-            return cursor.fetchall()
-        finally:
-            conexion.close()
-
     def obtener_articulo(self, id):
         try:
             conexion = sqlite3.connect(self.db_name)
@@ -245,17 +232,17 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def actualizar_articulo(self, id, nombre_articulo, descripcion, cantidad_disponible, imagen):
+    def actualizar_articulo(self, id, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             
-            # Si la imagen es None, se actualiza sin cambiar la imagen
+            # Actualizar el artículo, incluyendo la fecha de ingreso
             cursor.execute(''' 
             UPDATE inventario 
-            SET nombre_articulo=?, descripcion=?, cantidad_disponible=?, imagen=?
+            SET nombre_articulo=?, descripcion=?, cantidad_disponible=?, imagen=?, fecha_ingreso=?
             WHERE id=? 
-            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, id))
+            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso, id))
             
             conexion.commit()
             return True
@@ -306,3 +293,34 @@ class GestionDB:
             return cursor.fetchall()
         finally:
             conexion.close()
+
+    def eliminar_columna_stock_minimo(self):
+        conexion = sqlite3.connect(self.db_name)
+        cursor = conexion.cursor()
+        
+        # Crear una nueva tabla sin la columna stock_minimo
+        cursor.execute('''
+        CREATE TABLE inventario_nueva (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre_articulo TEXT NOT NULL,
+            descripcion TEXT,
+            cantidad_disponible INTEGER DEFAULT 0,
+            imagen TEXT,
+            fecha_ingreso DATE
+        )
+        ''')
+        
+        # Copiar los datos de la tabla antigua a la nueva
+        cursor.execute('''
+        INSERT INTO inventario_nueva (id, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso)
+        SELECT id, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso FROM inventario
+        ''')
+        
+        # Eliminar la tabla antigua
+        cursor.execute('DROP TABLE inventario')
+        
+        # Renombrar la nueva tabla
+        cursor.execute('ALTER TABLE inventario_nueva RENAME TO inventario')
+        
+        conexion.commit()
+        conexion.close()
