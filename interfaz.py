@@ -443,10 +443,9 @@ class Aplicacion:
                     self.ruta_imagen = None
                     self.label_imagen.configure(image='')
             else:
-                # Si no hay imagen, mostrar un texto o una imagen de "sin imagen"
+                # Si no hay imagen, limpiar la etiqueta de la imagen
                 self.label_imagen.configure(image='')
-                self.label_imagen.image = None
-                messagebox.showinfo("Información", "Este artículo no tiene imagen.")
+                self.label_imagen.image = None  # Asegurarse de que no haya referencia a la imagen anterior
 
     def buscar_articulos(self):
         filtro = self.entry_busqueda_inventario.get()
