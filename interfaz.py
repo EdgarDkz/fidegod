@@ -442,10 +442,10 @@ class Aplicacion:
                     print(f"Error al cargar la imagen: {e}")
                     self.ruta_imagen = None
                     self.label_imagen.configure(image='')
-            else:
-                # Si no hay imagen, limpiar la etiqueta de la imagen
-                self.label_imagen.configure(image='')
-                self.label_imagen.image = None  # Asegurarse de que no haya referencia a la imagen anterior
+            
+            # Establecer la fecha de ingreso en el DateEntry
+            if articulo and articulo[5]:  # Asegúrate de que este índice sea correcto
+                self.campos_inventario['fecha_ingreso'].set_date(articulo[5])  # Establecer la fecha
 
     def buscar_articulos(self):
         filtro = self.entry_busqueda_inventario.get()
