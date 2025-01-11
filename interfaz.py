@@ -437,11 +437,15 @@ class Aplicacion:
                     imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
                     foto = ImageTk.PhotoImage(imagen)
                     self.label_imagen.configure(image=foto)
-                    self.label_imagen.image = foto
+                    self.label_imagen.image = foto  # Mantener referencia
                 except Exception as e:
                     print(f"Error al cargar la imagen: {e}")
                     self.ruta_imagen = None
-                    self.label_imagen.configure(image='')
+                    self.label_imagen.configure(image='')  # Limpiar imagen si hay error
+            else:
+                # Limpiar el Label de la imagen si no hay imagen
+                self.label_imagen.configure(image='')
+                self.label_imagen.image = None  # Asegurarse de que la referencia se limpie
             
             # Establecer la fecha de ingreso en el DateEntry
             if articulo and articulo[5]:  # Asegúrate de que este índice sea correcto
