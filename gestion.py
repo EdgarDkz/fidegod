@@ -124,32 +124,32 @@ class GestionDB:
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            
-            # Verificar stock actual
+
+            # Obtener la cantidad actual del artículo
             cursor.execute('SELECT cantidad_disponible FROM inventario WHERE id=?', (id_articulo,))
-            stock_actual = cursor.fetchone()[0]
-            
-            if tipo == 'salida' and stock_actual < cantidad:
-                return False, "Stock insuficiente"
+            cantidad_actual = cursor.fetchone()[0]
 
-            # Actualizar inventario
-            nueva_cantidad = stock_actual + cantidad if tipo == 'entrada' else stock_actual - cantidad
-            cursor.execute('''
-            UPDATE inventario SET cantidad_disponible=? WHERE id=?
-            ''', (nueva_cantidad, id_articulo))
+            # Actualizar la cantidad según el tipo de transacción
+            if tipo == 'entrada':
+                nueva_cantidad = cantidad_actual + cantidad
+            elif tipo == 'salida':
+                nueva_cantidad = cantidad_actual - cantidad
+                if nueva_cantidad < 0:
+                    return False  # No se puede tener cantidad negativa
 
-            # Registrar transacción
-            fecha_actual = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute('''
-            INSERT INTO transacciones (id_articulo, tipo, cantidad, fecha)
-            VALUES (?, ?, ?, ?)
-            ''', (id_articulo, tipo, cantidad, fecha_actual))
-
+            # Actualizar el inventario
+            cursor.execute('UPDATE inventario SET cantidad_disponible=? WHERE id=?', (nueva_cantidad, id_articulo))
             conexion.commit()
-            return True, "Transacción exitosa"
+
+            # Registrar la transacción
+            cursor.execute('INSERT INTO transacciones (id_articulo, tipo, cantidad, fecha) VALUES (?, ?, ?, ?)',
+                           (id_articulo, tipo, cantidad, datetime.now().strftime('%Y-%m-%d')))
+            conexion.commit()
+
+            return True
         except Exception as e:
-            print(f"Error en transacción: {e}")
-            return False, str(e)
+            print(f"Error al registrar transacción: {e}")
+            return False
         finally:
             conexion.close()
 
@@ -324,3 +324,12 @@ class GestionDB:
         
         conexion.commit()
         conexion.close()
+
+    def obtener_transacciones(self):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('SELECT * FROM transacciones')  # Asegúrate de que la tabla transacciones exista
+            return cursor.fetchall()
+        finally:
+            conexion.close()

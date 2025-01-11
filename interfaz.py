@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import os
 from gestion import GestionDB
 from tkcalendar import DateEntry
+from datetime import datetime
 
 class Aplicacion:
     def __init__(self, root):
@@ -25,6 +26,10 @@ class Aplicacion:
         self.notebook.add(self.tab_personas, text='Gestión de Personas')
         self.notebook.add(self.tab_inventario, text='Gestión de Inventario')
         self.notebook.add(self.tab_transacciones, text='Transacciones')
+        
+        # Botón para abrir la ventana de transacciones
+        ttk.Button(self.tab_transacciones, text="Registrar Transacción", 
+                command=lambda: abrir_ventana_transacciones(self.db)).pack(pady=10)
         
         # Inicializar componentes
         self.setup_personas_tab()
@@ -216,8 +221,22 @@ class Aplicacion:
         self.actualizar_lista_inventario()
 
     def setup_transacciones_tab(self):
-        # Implementar vista de transacciones
-        pass
+        # Crear TreeView para mostrar transacciones
+        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Fecha'), show='headings')
+        self.tree_transacciones.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Configurar columnas
+        for col in self.tree_transacciones['columns']:
+            self.tree_transacciones.heading(col, text=col)
+            self.tree_transacciones.column(col, width=100)
+
+        # Agregar scrollbar
+        scrollbar = ttk.Scrollbar(self.tab_transacciones, orient='vertical', command=self.tree_transacciones.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.tree_transacciones.configure(yscrollcommand=scrollbar.set)
+
+        # Cargar datos iniciales
+        self.actualizar_lista_transacciones()
 
     # Métodos para gestión de personas
     def actualizar_lista_personas(self):
@@ -535,6 +554,90 @@ class Aplicacion:
             self.actualizar_lista_inventario()
         else:
             messagebox.showerror("Error", "No se pudo actualizar el artículo")
+
+    def actualizar_lista_transacciones(self):
+        # Limpiar el TreeView
+        for item in self.tree_transacciones.get_children():
+            self.tree_transacciones.delete(item)
+
+        # Obtener y mostrar las transacciones
+        transacciones = self.db.obtener_transacciones()  # Asegúrate de tener este método en tu clase GestionDB
+        for transaccion in transacciones:
+            self.tree_transacciones.insert('', 'end', values=transaccion)
+
+class VentanaTransacciones:
+    def __init__(self, master, db):
+        self.master = master
+        self.db = db
+        self.master.title("Registrar Transacción")
+        self.master.geometry("400x300")  # Tamaño de la ventana
+
+        # Agregar un marco para el diseño
+        frame = ttk.Frame(master, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # Artículo
+        tk.Label(frame, text="Seleccionar Artículo:").grid(row=0, column=0, padx=5, pady=5)
+        self.combo_articulos = ttk.Combobox(frame)
+        self.combo_articulos.grid(row=0, column=1, padx=5, pady=5)
+        self.cargar_articulos()
+
+        # Tipo de transacción
+        tk.Label(frame, text="Tipo de Transacción:").grid(row=1, column=0, padx=5, pady=5)
+        self.tipo_transaccion = ttk.Combobox(frame, values=["entrada", "salida"])
+        self.tipo_transaccion.grid(row=1, column=1, padx=5, pady=5)
+
+        # Cantidad
+        tk.Label(frame, text="Cantidad:").grid(row=2, column=0, padx=5, pady=5)
+        self.campo_cantidad = tk.Entry(frame)
+        self.campo_cantidad.grid(row=2, column=1, padx=5, pady=5)
+
+        # Fecha
+        tk.Label(frame, text="Fecha:").grid(row=3, column=0, padx=5, pady=5)
+        self.campo_fecha = tk.Entry(frame)
+        self.campo_fecha.grid(row=3, column=1, padx=5, pady=5)
+        self.campo_fecha.insert(0, datetime.now().strftime('%Y-%m-%d'))  # Fecha actual
+
+        # Descripción
+        tk.Label(frame, text="Descripción (opcional):").grid(row=4, column=0, padx=5, pady=5)
+        self.campo_descripcion = tk.Entry(frame)
+        self.campo_descripcion.grid(row=4, column=1, padx=5, pady=5)
+
+        # Botón para registrar transacción
+        self.boton_registrar = tk.Button(frame, text="Registrar Transacción", command=self.registrar_transaccion)
+        self.boton_registrar.grid(row=5, columnspan=2, pady=10)
+
+    def cargar_articulos(self):
+        articulos = self.db.obtener_inventario()
+        nombres_articulos = [articulo[1] for articulo in articulos]  # Suponiendo que el nombre está en la segunda columna
+        self.combo_articulos['values'] = nombres_articulos
+
+    def registrar_transaccion(self):
+        articulo_seleccionado = self.combo_articulos.get()
+        tipo = self.tipo_transaccion.get()
+        cantidad = self.campo_cantidad.get()
+        fecha = self.campo_fecha.get()
+        descripcion = self.campo_descripcion.get()
+
+        # Obtener el ID del artículo seleccionado
+        articulos = self.db.obtener_inventario()
+        id_articulo = next((articulo[0] for articulo in articulos if articulo[1] == articulo_seleccionado), None)
+
+        if id_articulo is not None:
+            # Lógica para registrar la transacción
+            if self.db.registrar_transaccion(id_articulo, tipo, int(cantidad)):
+                messagebox.showinfo("Transacción", "Transacción registrada con éxito.")
+                # Actualizar el TreeView
+                self.master.actualizar_lista_transacciones()  # Asegúrate de que esto funcione
+            else:
+                messagebox.showerror("Error", "No se pudo registrar la transacción.")
+        else:
+            messagebox.showwarning("Advertencia", "Seleccione un artículo válido.")
+
+# Para abrir la ventana de transacciones
+def abrir_ventana_transacciones(db):
+    ventana = tk.Toplevel()
+    VentanaTransacciones(ventana, db)
 
 if __name__ == "__main__":
     root = tk.Tk()
