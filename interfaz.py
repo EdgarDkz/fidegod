@@ -323,11 +323,46 @@ class Aplicacion:
             self.label_imagen.image = foto  # Mantener referencia
 
     def eliminar_imagen(self):
-        if self.ruta_imagen:  # Solo preguntar si hay una imagen
-            if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen del artículo?"):
-                self.ruta_imagen = None
-                self.label_imagen.configure(image='')
-                self.label_imagen.image = None
+        try:
+            # Verificar si hay un artículo seleccionado
+            seleccion = self.tree_inventario.selection()
+            if not seleccion:
+                messagebox.showwarning("Aviso", "Por favor, seleccione un artículo primero.")
+                return
+            
+            item = seleccion[0]
+            item_id = self.tree_inventario.item(item)['values'][0]
+            
+            # Obtener el artículo actual
+            articulo = self.db.obtener_articulo(item_id)
+            if not articulo or not articulo[4]:  # Si no hay artículo o no tiene imagen
+                messagebox.showinfo("Información", "Este artículo no tiene una imagen para eliminar.")
+                return
+            
+            # Confirmar la eliminación
+            if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen de este artículo?"):
+                # Actualizar el artículo manteniendo todos los datos excepto la imagen
+                if self.db.actualizar_articulo(
+                    id=item_id,
+                    nombre_articulo=articulo[1],  # Mantener el nombre del artículo
+                    descripcion=articulo[2],        # Mantener la descripción
+                    cantidad_disponible=articulo[3],  # Mantener la cantidad
+                    imagen=None  # Eliminar la imagen
+                ):
+                    # Limpiar la imagen en la interfaz
+                    self.label_imagen.configure(image='')
+                    self.label_imagen.image = None
+                    self.ruta_imagen = None
+                    
+                    # Actualizar la lista de inventario
+                    self.actualizar_lista_inventario()
+                    messagebox.showinfo("Éxito", "Imagen eliminada correctamente.")
+                else:
+                    messagebox.showerror("Error", "No se pudo eliminar la imagen.")
+                
+        except Exception as e:
+            print(f"Error al eliminar imagen: {e}")
+            messagebox.showerror("Error", "Ocurrió un error al intentar eliminar la imagen.")
 
     def agregar_articulo(self):
         valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
@@ -359,11 +394,28 @@ class Aplicacion:
             messagebox.showerror("Error", "No se pudo agregar el artículo")
 
     def actualizar_lista_inventario(self):
+        # Limpiar el TreeView
         for item in self.tree_inventario.get_children():
             self.tree_inventario.delete(item)
+        
+        # Obtener y mostrar los artículos
         articulos = self.db.obtener_inventario()
         for articulo in articulos:
-            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen
+            # Preparar la miniatura de la imagen si existe
+            imagen_texto = "🖼️"  # Emoji por defecto para indicar que hay imagen
+            if articulo[4]:  # Si existe la imagen
+                imagen_texto = "Ver"  # Texto para indicar que hay una imagen
+            else:
+                imagen_texto = "Sin imagen"  # Texto si no hay imagen
+
+            valores = (
+                articulo[0],  # ID
+                articulo[1],  # Nombre
+                articulo[2],  # Descripción
+                articulo[3],  # Cantidad
+                imagen_texto   # Texto para la imagen
+            )
+            self.tree_inventario.insert('', 'end', values=valores)
 
     def seleccionar_articulo(self, event):
         seleccion = self.tree_inventario.selection()
@@ -386,9 +438,15 @@ class Aplicacion:
                     foto = ImageTk.PhotoImage(imagen)
                     self.label_imagen.configure(image=foto)
                     self.label_imagen.image = foto
-                except:
+                except Exception as e:
+                    print(f"Error al cargar la imagen: {e}")
                     self.ruta_imagen = None
                     self.label_imagen.configure(image='')
+            else:
+                # Si no hay imagen, mostrar un texto o una imagen de "sin imagen"
+                self.label_imagen.configure(image='')
+                self.label_imagen.image = None
+                messagebox.showinfo("Información", "Este artículo no tiene imagen.")
 
     def buscar_articulos(self):
         filtro = self.entry_busqueda_inventario.get()
@@ -399,9 +457,16 @@ class Aplicacion:
             self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen
 
     def limpiar_campos_inventario(self):
+        # Limpiar campos de texto
         for entry in self.campos_inventario.values():
             entry.delete(0, tk.END)
-        self.eliminar_imagen()
+        
+        # Limpiar imagen
+        self.label_imagen.configure(image='')
+        self.label_imagen.image = None
+        self.ruta_imagen = None  # Importante: resetear la ruta de la imagen
+        
+        # Deseleccionar item en el TreeView si hay alguno seleccionado
         if self.tree_inventario.selection():
             self.tree_inventario.selection_remove(self.tree_inventario.selection())
 

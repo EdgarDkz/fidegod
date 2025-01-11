@@ -249,11 +249,14 @@ class GestionDB:
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            cursor.execute('''
+            
+            # Si la imagen es None, se actualiza sin cambiar la imagen
+            cursor.execute(''' 
             UPDATE inventario 
             SET nombre_articulo=?, descripcion=?, cantidad_disponible=?, imagen=?
-            WHERE id=?
+            WHERE id=? 
             ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, id))
+            
             conexion.commit()
             return True
         except Exception as e:
