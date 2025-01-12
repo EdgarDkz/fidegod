@@ -223,7 +223,7 @@ class Aplicacion:
 
     def setup_transacciones_tab(self):
         # Crear TreeView para mostrar transacciones
-        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Fecha', 'Stock en Transacción'), show='headings')
+        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Stock sin Transacción', 'Stock con Transacción', 'Fecha'), show='headings')
         self.tree_transacciones.pack(fill='both', expand=True, padx=5, pady=5)
 
         # Configurar columnas
@@ -617,8 +617,6 @@ class VentanaTransacciones:
         articulo_seleccionado = self.combo_articulos.get()
         tipo = self.tipo_transaccion.get()
         cantidad = self.campo_cantidad.get()
-        fecha = self.campo_fecha.get()
-        descripcion = self.campo_descripcion.get()
 
         # Obtener el ID del artículo seleccionado
         articulos = self.db.obtener_inventario()
@@ -631,14 +629,12 @@ class VentanaTransacciones:
                 if self.db.registrar_transaccion(id_articulo, tipo, cantidad):
                     messagebox.showinfo("Transacción", "Transacción registrada con éxito.")
                     
-                    # Obtener la nueva cantidad del artículo
-                    nueva_cantidad = self.db.obtener_cantidad_articulo(id_articulo)
-
-                    # Actualizar el TreeView en la instancia principal
-                    self.app.actualizar_lista_transacciones()  # Asegúrate de que esto funcione
+                    # Actualizar la lista de transacciones
+                    self.app.actualizar_lista_transacciones()  # Actualiza la lista de transacciones
                     
-                    # Mostrar la nueva cantidad en la tabla de transacciones
-                    self.app.tree_transacciones.insert('', 'end', values=(None, articulo_seleccionado, tipo, cantidad, fecha, nueva_cantidad))
+                    # Actualizar la lista de inventario
+                    self.app.actualizar_lista_inventario()  # Actualiza la lista de inventario
+                    
                 else:
                     messagebox.showerror("Error", "No se pudo registrar la transacción.")
             except ValueError:

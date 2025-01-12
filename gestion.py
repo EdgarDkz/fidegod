@@ -330,7 +330,10 @@ class GestionDB:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             cursor.execute('''
-                SELECT t.id, i.nombre_articulo, t.tipo, t.cantidad, t.fecha, t.stock_actual 
+                SELECT t.id, i.nombre_articulo AS articulo, t.tipo, t.cantidad, 
+                       t.stock_actual AS "stock sin transaccion", 
+                       (t.stock_actual + CASE WHEN t.tipo = 'entrada' THEN t.cantidad ELSE -t.cantidad END) AS "stock con transaccion", 
+                       t.fecha 
                 FROM transacciones t 
                 JOIN inventario i ON t.id_articulo = i.id
             ''')
