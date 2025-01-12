@@ -222,7 +222,7 @@ class Aplicacion:
 
     def setup_transacciones_tab(self):
         # Crear TreeView para mostrar transacciones
-        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Fecha', 'Stock Actual'), show='headings')
+        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Fecha', 'Stock en Transacción'), show='headings')
         self.tree_transacciones.pack(fill='both', expand=True, padx=5, pady=5)
 
         # Configurar columnas

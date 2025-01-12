@@ -141,9 +141,9 @@ class GestionDB:
             cursor.execute('UPDATE inventario SET cantidad_disponible=? WHERE id=?', (nueva_cantidad, id_articulo))
             conexion.commit()
 
-            # Registrar la transacción
-            cursor.execute('INSERT INTO transacciones (id_articulo, tipo, cantidad, fecha) VALUES (?, ?, ?, ?)',
-                           (id_articulo, tipo, cantidad, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            # Registrar la transacción con el stock actual
+            cursor.execute('INSERT INTO transacciones (id_articulo, tipo, cantidad, fecha, stock_actual) VALUES (?, ?, ?, ?, ?)',
+                           (id_articulo, tipo, cantidad, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), cantidad_actual))
             conexion.commit()
 
             return True
@@ -330,7 +330,7 @@ class GestionDB:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             cursor.execute('''
-                SELECT t.id, i.nombre_articulo, t.tipo, t.cantidad, t.fecha, i.cantidad_disponible 
+                SELECT t.id, i.nombre_articulo, t.tipo, t.cantidad, t.fecha, t.stock_actual 
                 FROM transacciones t 
                 JOIN inventario i ON t.id_articulo = i.id
             ''')
@@ -344,5 +344,16 @@ class GestionDB:
             cursor = conexion.cursor()
             cursor.execute('SELECT cantidad_disponible FROM inventario WHERE id=?', (id_articulo,))
             return cursor.fetchone()[0]
+        finally:
+            conexion.close()
+
+    def agregar_columna_stock_actual(self):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('ALTER TABLE transacciones ADD COLUMN stock_actual INTEGER')
+            conexion.commit()
+        except Exception as e:
+            print(f"Error al agregar columna: {e}")
         finally:
             conexion.close()

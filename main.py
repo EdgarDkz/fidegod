@@ -19,8 +19,9 @@ def crear_base_datos():
 
     # Eliminar la tabla si ya existe
     cursor.execute('DROP TABLE IF EXISTS inventario;')
+    cursor.execute('DROP TABLE IF EXISTS transacciones;')
 
-    # Crear tabla inventario con la nueva columna
+    # Crear tabla inventario
     cursor.execute('''
     CREATE TABLE inventario (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +33,7 @@ def crear_base_datos():
     )
     ''')
 
-    # Crear tabla transacciones
+    # Crear tabla transacciones con la columna stock_actual
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS transacciones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,6 +41,7 @@ def crear_base_datos():
         tipo TEXT CHECK(tipo IN ('entrada', 'salida')),
         cantidad INTEGER,
         fecha TEXT,
+        stock_actual INTEGER,
         FOREIGN KEY (id_articulo) REFERENCES inventario(id)
     )
     ''')
