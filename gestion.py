@@ -143,7 +143,7 @@ class GestionDB:
 
             # Registrar la transacción
             cursor.execute('INSERT INTO transacciones (id_articulo, tipo, cantidad, fecha) VALUES (?, ?, ?, ?)',
-                           (id_articulo, tipo, cantidad, datetime.now().strftime('%Y-%m-%d')))
+                           (id_articulo, tipo, cantidad, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
             conexion.commit()
 
             return True
@@ -329,7 +329,20 @@ class GestionDB:
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            cursor.execute('SELECT * FROM transacciones')  # Asegúrate de que la tabla transacciones exista
+            cursor.execute('''
+                SELECT t.id, i.nombre_articulo, t.tipo, t.cantidad, t.fecha, i.cantidad_disponible 
+                FROM transacciones t 
+                JOIN inventario i ON t.id_articulo = i.id
+            ''')
             return cursor.fetchall()
+        finally:
+            conexion.close()
+
+    def obtener_cantidad_articulo(self, id_articulo):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('SELECT cantidad_disponible FROM inventario WHERE id=?', (id_articulo,))
+            return cursor.fetchone()[0]
         finally:
             conexion.close()

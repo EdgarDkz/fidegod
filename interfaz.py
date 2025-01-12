@@ -222,7 +222,7 @@ class Aplicacion:
 
     def setup_transacciones_tab(self):
         # Crear TreeView para mostrar transacciones
-        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Fecha'), show='headings')
+        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Fecha', 'Stock Actual'), show='headings')
         self.tree_transacciones.pack(fill='both', expand=True, padx=5, pady=5)
 
         # Configurar columnas
@@ -595,9 +595,8 @@ class VentanaTransacciones:
 
         # Fecha
         tk.Label(frame, text="Fecha:").grid(row=3, column=0, padx=5, pady=5)
-        self.campo_fecha = tk.Entry(frame)
+        self.campo_fecha = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
         self.campo_fecha.grid(row=3, column=1, padx=5, pady=5)
-        self.campo_fecha.insert(0, datetime.now().strftime('%Y-%m-%d'))  # Fecha actual
 
         # Descripción
         tk.Label(frame, text="Descripción (opcional):").grid(row=4, column=0, padx=5, pady=5)
@@ -625,13 +624,24 @@ class VentanaTransacciones:
         id_articulo = next((articulo[0] for articulo in articulos if articulo[1] == articulo_seleccionado), None)
 
         if id_articulo is not None:
-            # Lógica para registrar la transacción
-            if self.db.registrar_transaccion(id_articulo, tipo, int(cantidad)):
-                messagebox.showinfo("Transacción", "Transacción registrada con éxito.")
-                # Actualizar el TreeView en la instancia principal
-                self.app.actualizar_lista_transacciones()  # Usar la referencia a la instancia principal
-            else:
-                messagebox.showerror("Error", "No se pudo registrar la transacción.")
+            try:
+                cantidad = int(cantidad)  # Asegúrate de que la cantidad sea un número
+                # Lógica para registrar la transacción
+                if self.db.registrar_transaccion(id_articulo, tipo, cantidad):
+                    messagebox.showinfo("Transacción", "Transacción registrada con éxito.")
+                    
+                    # Obtener la nueva cantidad del artículo
+                    nueva_cantidad = self.db.obtener_cantidad_articulo(id_articulo)
+
+                    # Actualizar el TreeView en la instancia principal
+                    self.app.actualizar_lista_transacciones()  # Asegúrate de que esto funcione
+                    
+                    # Mostrar la nueva cantidad en la tabla de transacciones
+                    self.app.tree_transacciones.insert('', 'end', values=(None, articulo_seleccionado, tipo, cantidad, fecha, nueva_cantidad))
+                else:
+                    messagebox.showerror("Error", "No se pudo registrar la transacción.")
+            except ValueError:
+                messagebox.showwarning("Advertencia", "La cantidad debe ser un número válido.")
         else:
             messagebox.showwarning("Advertencia", "Seleccione un artículo válido.")
 
