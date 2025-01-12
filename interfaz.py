@@ -36,40 +36,9 @@ class Aplicacion:
         self.setup_inventario_tab()
         self.setup_transacciones_tab()
         
-
-
-    def setup_personas_tab(self):
-        # Frame para búsqueda
-        frame_busqueda = ttk.LabelFrame(self.tab_personas, text="Búsqueda")
-        frame_busqueda.pack(fill='x', padx=5, pady=5)
+        # Variable para la casilla de verificación
+        self.entregado_var = tk.BooleanVar()
         
-        ttk.Label(frame_busqueda, text="Buscar:").pack(side='left', padx=5)
-        self.entry_busqueda_personas = ttk.Entry(frame_busqueda)
-        self.entry_busqueda_personas.pack(side='left', padx=5)
-        ttk.Button(frame_busqueda, text="Buscar", 
-                command=self.buscar_personas).pack(side='left', padx=5)
-        ttk.Button(frame_busqueda, text="Exportar a CSV", 
-                command=lambda: self.db.exportar_a_csv('personas')).pack(side='right', padx=5)
-        # Frame para el TreeView
-        frame_tree = ttk.Frame(self.tab_personas)
-        frame_tree.pack(fill='both', expand=True, padx=5, pady=5)
-
-        # Crear Treeview
-        self.tree_personas = ttk.Treeview(frame_tree, columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 
-        'Municipio', 'Fecha Petición', 'Fecha Entrega'),
-                                        show='headings')
-
-        # Configurar columnas
-        for col in self.tree_personas['columns']:
-            self.tree_personas.heading(col, text=col)
-            self.tree_personas.column(col, width=100)
-
-        # Agregar scrollbar
-        scrollbar = ttk.Scrollbar(frame_tree, orient='vertical', command=self.tree_personas.yview)
-        scrollbar.pack(side='right', fill='y')
-        self.tree_personas.configure(yscrollcommand=scrollbar.set)
-        self.tree_personas.pack(fill='both', expand=True)
-
         # Frame para formulario
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
         self.frame_formulario.pack(fill='x', padx=5, pady=5)
@@ -107,9 +76,12 @@ class Aplicacion:
             date_entry.grid(row=i, column=1, padx=5, pady=2)
             self.campos_persona[campo] = date_entry
 
+        # Casilla de verificación para "Entregado"
+        ttk.Checkbutton(self.frame_formulario, text="Entregado", variable=self.entregado_var).grid(row=len(campos_normales) + len(campos_fecha), column=0, columnspan=2)
+
         # Botones
         frame_botones = ttk.Frame(self.frame_formulario)
-        frame_botones.grid(row=len(campos_normales) + len(campos_fecha), column=0, columnspan=2, pady=10)
+        frame_botones.grid(row=len(campos_normales) + len(campos_fecha) + 1, column=0, columnspan=2, pady=10)
 
         ttk.Button(frame_botones, text="Agregar", 
                 command=self.agregar_persona).pack(side='left', padx=5)
@@ -239,6 +211,24 @@ class Aplicacion:
         # Cargar datos iniciales
         self.actualizar_lista_transacciones()
 
+    def setup_personas_tab(self):
+        # Crear TreeView para mostrar personas
+        self.tree_personas = ttk.Treeview(self.tab_personas, columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 'Municipio', 'Fecha Petición', 'Fecha Entrega'), show='headings')
+        self.tree_personas.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Configurar columnas
+        for col in self.tree_personas['columns']:
+            self.tree_personas.heading(col, text=col)
+            self.tree_personas.column(col, width=100)
+
+        # Agregar scrollbar
+        scrollbar = ttk.Scrollbar(self.tab_personas, orient='vertical', command=self.tree_personas.yview)
+        scrollbar.pack(side='right', fill='y')
+        self.tree_personas.configure(yscrollcommand=scrollbar.set)
+
+        # Cargar datos iniciales
+        self.actualizar_lista_personas()
+
     # Métodos para gestión de personas
     def actualizar_lista_personas(self):
         for item in self.tree_personas.get_children():
@@ -257,6 +247,13 @@ class Aplicacion:
 
     def agregar_persona(self):
         valores = {campo: entry.get() for campo, entry in self.campos_persona.items()}
+        
+        # Solo asignar la fecha de entrega si la casilla está marcada
+        if self.entregado_var.get():
+            valores['fecha_entrega'] = self.campos_persona['fecha_entrega'].get()
+        else:
+            valores['fecha_entrega'] = None  # O puedes dejarlo vacío según tu lógica
+
         if not valores['nombre']:
             messagebox.showwarning("Error", "El nombre es obligatorio")
             return
@@ -277,7 +274,20 @@ class Aplicacion:
         id_persona = item['values'][0]
         valores = {campo: entry.get() for campo, entry in self.campos_persona.items()}
         
-        if self.db.actualizar_persona(id_persona, **valores):
+        # Solo asignar la fecha de entrega si la casilla está marcada
+        if self.entregado_var.get():
+            valores['fecha_entrega'] = self.campos_persona['fecha_entrega'].get()
+        else:
+            valores['fecha_entrega'] = None  # O puedes dejarlo vacío según tu lógica
+
+        # Asegúrate de que los nombres de los argumentos coincidan con los de GestionDB
+        if self.db.actualizar_persona(id_persona, 
+                                       nombre=valores['nombre'], 
+                                       telefono=valores['telefono'], 
+                                       direccion=valores['direccion'], 
+                                       municipio=valores['municipio'], 
+                                       fecha_peticion=valores['fecha_peticion'], 
+                                       fecha_entrega=valores['fecha_entrega']):
             messagebox.showinfo("Éxito", "Persona actualizada correctamente")
             self.limpiar_campos_persona()
             self.actualizar_lista_personas()
@@ -315,6 +325,9 @@ class Aplicacion:
                 else:
                     entry.delete(0, tk.END)
                     entry.insert(0, valores[i + 1] if valores[i + 1] else '')
+
+            # Establecer el estado de la casilla de verificación
+            self.entregado_var.set(valores[6] is not None)  # Asumiendo que la fecha de entrega es el índice 6
 
     def limpiar_campos_persona(self):
         for campo, entry in self.campos_persona.items():
