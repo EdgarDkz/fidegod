@@ -4,11 +4,12 @@ def crear_base_datos():
     conexion = sqlite3.connect('gestion_inventario.db')
     cursor = conexion.cursor()
 
-    # Crear tabla personas
+    # Crear tabla personas con la nueva columna articulo
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS personas (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
+        articulo TEXT,
         telefono TEXT,
         direccion TEXT,
         municipio TEXT,

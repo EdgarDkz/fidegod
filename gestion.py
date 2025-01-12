@@ -10,14 +10,14 @@ class GestionDB:
         self.db_name = 'gestion_inventario.db'
 
     # Funciones para gestión de personas
-    def agregar_persona(self, nombre, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+    def agregar_persona(self, nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             cursor.execute('''
-            INSERT INTO personas (nombre, telefono, direccion, municipio, fecha_peticion, fecha_entrega)
-            VALUES (?, ?, ?, ?, ?, ?)
-            ''', (nombre, telefono, direccion, municipio, fecha_peticion, fecha_entrega))
+            INSERT INTO personas (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega))
             conexion.commit()
             return True
         except Exception as e:

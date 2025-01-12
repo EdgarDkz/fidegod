@@ -55,7 +55,7 @@ class Aplicacion:
         frame_tree.pack(fill='both', expand=True, padx=5, pady=5)
 
         # Crear Treeview
-        self.tree_personas = ttk.Treeview(frame_tree, columns=('ID', 'Nombre', 'Teléfono', 'Dirección', 
+        self.tree_personas = ttk.Treeview(frame_tree, columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 
         'Municipio', 'Fecha Petición', 'Fecha Entrega'),
                                         show='headings')
 
@@ -78,6 +78,7 @@ class Aplicacion:
         self.campos_persona = {}
         campos_normales = [
             ('Nombre:', 'nombre'), 
+            ('Artículo:', 'articulo'),  # Nueva entrada para el artículo
             ('Teléfono:', 'telefono'), 
             ('Dirección:', 'direccion'), 
             ('Municipio:', 'municipio')
