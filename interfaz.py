@@ -142,6 +142,9 @@ class Aplicacion:
         # Botón para buscar
         ttk.Button(frame_busqueda, text="Buscar", command=self.buscar_personas).pack(side='left', padx=5)
 
+        # Botón para exportar a Excel
+        ttk.Button(frame_busqueda, text="Exportar a Excel", command=self.exportar_a_excel).pack(side='left', padx=5)
+
         # Cargar nombres y artículos en los comboboxes
         self.cargar_nombres_y_articulos()
 
@@ -199,9 +202,9 @@ class Aplicacion:
                 entry.grid(row=i, column=1, padx=5, pady=2)
                 self.campos_inventario[campo] = entry
         
-        # Frame para la imagen
+        # Frame para la imagen (mover a la derecha)
         frame_imagen = ttk.LabelFrame(self.frame_detalles_articulo, text="Imagen del Artículo")
-        frame_imagen.grid(row=len(campos_normales), column=0, columnspan=2, padx=5, pady=5)
+        frame_imagen.grid(row=0, column=2, rowspan=len(campos_normales), padx=5, pady=5)  # Cambiar a columna 2
         
         # Label para mostrar la imagen
         self.label_imagen = ttk.Label(frame_imagen)
@@ -218,7 +221,7 @@ class Aplicacion:
         
         # Botones de acción
         frame_botones = ttk.Frame(self.frame_detalles_articulo)
-        frame_botones.grid(row=len(campos_normales)+1, column=0, columnspan=2, pady=10)
+        frame_botones.grid(row=len(campos_normales)+1, column=0, columnspan=3, pady=10)  # Cambiar a 3 columnas
         
         ttk.Button(frame_botones, text="Agregar", 
                 command=self.agregar_articulo).pack(side='left', padx=5)
@@ -644,6 +647,10 @@ class Aplicacion:
     def abrir_ventana_agregar_persona(self):
         ventana = tk.Toplevel()
         VentanaAgregarPersona(ventana, self)
+
+    def exportar_a_excel(self):
+        success, message = self.db.exportar_a_csv('personas')
+        messagebox.showinfo("Exportar a Excel", message)
 
 class VentanaTransacciones:
     def __init__(self, master, app, db):
