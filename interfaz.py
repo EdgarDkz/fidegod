@@ -39,30 +39,38 @@ class Aplicacion:
         # Variable para la casilla de verificación
         self.entregado_var = tk.BooleanVar()
         
+        # Opciones de municipios
+        self.municipios = ["Montemorelos", "Allende", "Rayones", "Linares", "Hualahuises", "Terán"]
+        
         # Frame para formulario
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
         self.frame_formulario.pack(fill='x', padx=5, pady=5)
-
+        
         # Campos del formulario
         self.campos_persona = {}
         campos_normales = [
             ('Nombre:', 'nombre'), 
-            ('Artículo:', 'articulo'),  # Nueva entrada para el artículo
+            ('Artículo:', 'articulo'),  
             ('Teléfono:', 'telefono'), 
             ('Dirección:', 'direccion'), 
-            ('Municipio:', 'municipio')
+            ('Municipio:', 'municipio')  # Cambiar a Combobox
         ]
         campos_fecha = [
             ('Fecha Petición:', 'fecha_peticion'),
             ('Fecha Entrega:', 'fecha_entrega')
         ]
 
-        # Crear campos normales (Entry)
+        # Crear campos normales (Entry y Combobox)
         for i, (label, campo) in enumerate(campos_normales):
             ttk.Label(self.frame_formulario, text=label).grid(row=i, column=0, padx=5, pady=2)
-            entry = ttk.Entry(self.frame_formulario)
-            entry.grid(row=i, column=1, padx=5, pady=2)
-            self.campos_persona[campo] = entry
+            if campo == 'municipio':
+                combobox = ttk.Combobox(self.frame_formulario, values=self.municipios)
+                combobox.grid(row=i, column=1, padx=5, pady=2)
+                self.campos_persona[campo] = combobox
+            else:
+                entry = ttk.Entry(self.frame_formulario)
+                entry.grid(row=i, column=1, padx=5, pady=2)
+                self.campos_persona[campo] = entry
 
         # Crear campos de fecha (DateEntry)
         for i, (label, campo) in enumerate(campos_fecha, start=len(campos_normales)):
