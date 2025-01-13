@@ -26,17 +26,24 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def obtener_personas(self, filtro=None):
+    def obtener_personas(self, nombre=None, articulo=None, municipio=None):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            if filtro:
-                cursor.execute('''
-                SELECT * FROM personas 
-                WHERE nombre LIKE ? OR telefono LIKE ? OR municipio LIKE ?
-                ''', (f'%{filtro}%', f'%{filtro}%', f'%{filtro}%'))
-            else:
-                cursor.execute('SELECT * FROM personas')
+            query = "SELECT * FROM personas WHERE 1=1"
+            params = []
+
+            if nombre:
+                query += " AND nombre LIKE ?"
+                params.append(f'%{nombre}%')
+            if articulo:
+                query += " AND articulo LIKE ?"
+                params.append(f'%{articulo}%')
+            if municipio:
+                query += " AND municipio LIKE ?"
+                params.append(f'%{municipio}%')
+
+            cursor.execute(query, params)
             return cursor.fetchall()
         finally:
             conexion.close()
@@ -358,5 +365,35 @@ class GestionDB:
             conexion.commit()
         except Exception as e:
             print(f"Error al agregar columna: {e}")
+        finally:
+            conexion.close()
+
+    def obtener_personas_por_fecha(self, fecha_desde, fecha_hasta):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute(''' 
+                SELECT * FROM personas 
+                WHERE fecha_peticion BETWEEN ? AND ?
+            ''', (fecha_desde, fecha_hasta))
+            return cursor.fetchall()
+        finally:
+            conexion.close()
+
+    def obtener_nombres(self):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('SELECT DISTINCT nombre FROM personas')
+            return [row[0] for row in cursor.fetchall()]
+        finally:
+            conexion.close()
+
+    def obtener_articulos(self):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('SELECT DISTINCT articulo FROM personas')
+            return [row[0] for row in cursor.fetchall()]
         finally:
             conexion.close()

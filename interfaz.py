@@ -13,6 +13,7 @@ class Aplicacion:
         self.root.geometry("1200x700")
         
         self.db = GestionDB()
+        self.app = self.db
         
         # Crear notebook para pestañas
         self.notebook = ttk.Notebook(root)
@@ -31,6 +32,23 @@ class Aplicacion:
         ttk.Button(self.tab_transacciones, text="Registrar Transacción", 
                 command=lambda: abrir_ventana_transacciones(self, self.db)).pack(pady=10)
         
+        # Crear un marco para los botones
+        frame_botones = ttk.Frame(self.tab_personas)
+        frame_botones.pack(pady=10)
+
+        # Botón para agregar persona
+        ttk.Button(frame_botones, text="Agregar Persona", 
+                command=self.abrir_ventana_agregar_persona).grid(row=0, column=0, padx=5)
+
+        # Botón para eliminar persona
+        ttk.Button(frame_botones, text="Eliminar Persona", 
+                command=self.eliminar_persona).grid(row=0, column=1, padx=5)
+        
+        # Ocultar detalles de persona
+        self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
+        self.frame_formulario.pack(fill='x', padx=5, pady=5)
+        self.frame_formulario.pack_forget()  # Ocultar el frame inicialmente
+        
         # Inicializar componentes
         self.setup_personas_tab()
         self.setup_inventario_tab()
@@ -41,10 +59,6 @@ class Aplicacion:
         
         # Opciones de municipios
         self.municipios = ["Montemorelos", "Allende", "Rayones", "Linares", "Hualahuises", "Terán"]
-        
-        # Frame para formulario
-        self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
-        self.frame_formulario.pack(fill='x', padx=5, pady=5)
         
         # Campos del formulario
         self.campos_persona = {}
@@ -105,6 +119,40 @@ class Aplicacion:
         
         # Cargar datos iniciales
         self.actualizar_lista_personas()
+
+        # Crear un marco para la búsqueda
+        frame_busqueda = ttk.Frame(self.tab_personas)
+        frame_busqueda.pack(pady=10)
+
+        ttk.Label(frame_busqueda, text="Buscar por Nombre:").pack(side='left', padx=5)
+        self.combobox_nombre = ttk.Combobox(frame_busqueda)
+        self.combobox_nombre.pack(side='left', padx=5)
+        self.combobox_nombre.bind("<<ComboboxSelected>>", self.buscar_personas)
+
+        ttk.Label(frame_busqueda, text="Buscar por Artículo:").pack(side='left', padx=5)
+        self.combobox_articulo = ttk.Combobox(frame_busqueda)
+        self.combobox_articulo.pack(side='left', padx=5)
+        self.combobox_articulo.bind("<<ComboboxSelected>>", self.buscar_personas)
+
+        ttk.Label(frame_busqueda, text="Buscar por Municipio:").pack(side='left', padx=5)
+        self.combobox_municipio = ttk.Combobox(frame_busqueda, values=self.municipios)
+        self.combobox_municipio.pack(side='left', padx=5)
+        self.combobox_municipio.bind("<<ComboboxSelected>>", self.buscar_personas)
+
+        # Botón para buscar
+        ttk.Button(frame_busqueda, text="Buscar", command=self.buscar_personas).pack(side='left', padx=5)
+
+        # Cargar nombres y artículos en los comboboxes
+        self.cargar_nombres_y_articulos()
+
+    def cargar_nombres_y_articulos(self):
+        # Obtener nombres y artículos de la base de datos
+        nombres = self.db.obtener_nombres()
+        articulos = self.db.obtener_articulos()
+
+        # Llenar los comboboxes
+        self.combobox_nombre['values'] = nombres
+        self.combobox_articulo['values'] = articulos
 
     def setup_inventario_tab(self):
         # Frame para búsqueda
@@ -245,11 +293,17 @@ class Aplicacion:
         for persona in personas:
             self.tree_personas.insert('', 'end', values=persona)
 
-    def buscar_personas(self):
-        filtro = self.entry_busqueda_personas.get()
+    def buscar_personas(self, event=None):
+        nombre = self.combobox_nombre.get()
+        articulo = self.combobox_articulo.get()
+        municipio = self.combobox_municipio.get()
+
+        # Limpiar la lista actual
         for item in self.tree_personas.get_children():
             self.tree_personas.delete(item)
-        personas = self.db.obtener_personas(filtro)
+
+        # Obtener personas filtradas
+        personas = self.db.obtener_personas(nombre, articulo, municipio)
         for persona in personas:
             self.tree_personas.insert('', 'end', values=persona)
 
@@ -308,14 +362,14 @@ class Aplicacion:
             messagebox.showwarning("Error", "Seleccione una persona para eliminar")
             return
         
+        # Confirmar la eliminación
         if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar esta persona?"):
             item = self.tree_personas.item(seleccion[0])
-            id_persona = item['values'][0]
+            id_persona = item['values'][0]  # Asumiendo que el ID es el primer valor
             
             if self.db.eliminar_persona(id_persona):
                 messagebox.showinfo("Éxito", "Persona eliminada correctamente")
-                self.limpiar_campos_persona()
-                self.actualizar_lista_personas()
+                self.actualizar_lista_personas()  # Actualizar la lista de personas
             else:
                 messagebox.showerror("Error", "No se pudo eliminar la persona")
 
@@ -587,6 +641,10 @@ class Aplicacion:
         for transaccion in transacciones:
             self.tree_transacciones.insert('', 'end', values=transaccion)
 
+    def abrir_ventana_agregar_persona(self):
+        ventana = tk.Toplevel()
+        VentanaAgregarPersona(ventana, self)
+
 class VentanaTransacciones:
     def __init__(self, master, app, db):
         self.master = master
@@ -662,6 +720,86 @@ class VentanaTransacciones:
                 messagebox.showwarning("Advertencia", "La cantidad debe ser un número válido.")
         else:
             messagebox.showwarning("Advertencia", "Seleccione un artículo válido.")
+
+class VentanaAgregarPersona:
+    def __init__(self, master, app):
+        self.master = master
+        self.app = app
+        self.master.title("Agregar Persona")
+        self.master.geometry("300x400")
+
+        # Crear un marco para el diseño
+        frame = ttk.Frame(master, padding="10")
+        frame.pack(fill='both', expand=True)
+
+        # Campos para ingresar datos
+        ttk.Label(frame, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_nombre = ttk.Entry(frame)
+        self.entry_nombre.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Artículo:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_articulo = ttk.Entry(frame)
+        self.entry_articulo.grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Teléfono:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_telefono = ttk.Entry(frame)
+        self.entry_telefono.grid(row=2, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Dirección:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_direccion = ttk.Entry(frame)
+        self.entry_direccion.grid(row=3, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Municipio:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+        self.combobox_municipio = ttk.Combobox(frame, values=self.app.municipios)
+        self.combobox_municipio.grid(row=4, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Fecha Petición:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_fecha_peticion = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_peticion.grid(row=5, column=1, padx=5, pady=5)
+
+        ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_entrega.grid(row=6, column=1, padx=5, pady=5)
+
+        # Checkbutton para marcar la fecha de entrega como pendiente
+        self.check_pendiente = tk.BooleanVar()
+        ttk.Checkbutton(frame, text="Fecha de Entrega Pendiente", variable=self.check_pendiente, command=self.toggle_fecha_entrega).grid(row=7, columnspan=2, pady=5)
+
+        # Botón para agregar persona
+        ttk.Button(frame, text="Agregar", command=self.agregar_persona).grid(row=8, columnspan=2, pady=10)
+
+    def toggle_fecha_entrega(self):
+        if self.check_pendiente.get():
+            self.entry_fecha_entrega.config(state='disabled')  # Deshabilitar el campo
+            self.entry_fecha_entrega.delete(0, tk.END)  # Limpiar el campo
+        else:
+            self.entry_fecha_entrega.config(state='normal')  # Habilitar el campo
+
+    def agregar_persona(self):
+        nombre = self.entry_nombre.get()
+        articulo = self.entry_articulo.get()
+        telefono = self.entry_telefono.get()
+        direccion = self.entry_direccion.get()
+        municipio = self.combobox_municipio.get()
+        fecha_peticion = self.entry_fecha_peticion.get()
+
+        # Manejar la fecha de entrega
+        if self.check_pendiente.get():
+            fecha_entrega = None  # O puedes usar un valor específico para indicar que está pendiente
+        else:
+            fecha_entrega = self.entry_fecha_entrega.get()
+
+        # Validar campos obligatorios
+        if not nombre or not telefono:
+            messagebox.showwarning("Advertencia", "Nombre y Teléfono son obligatorios.")
+            return
+
+        if self.app.db.agregar_persona(nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+            messagebox.showinfo("Éxito", "Persona agregada correctamente")
+            self.master.destroy()  # Cerrar la ventana
+            self.app.actualizar_lista_personas()  # Actualizar la lista de personas
+        else:
+            messagebox.showerror("Error", "No se pudo agregar la persona. Verifique los datos.")
 
 # Para abrir la ventana de transacciones
 def abrir_ventana_transacciones(app, db):
