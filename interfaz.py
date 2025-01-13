@@ -168,6 +168,9 @@ class Aplicacion:
         ttk.Button(frame_busqueda, text="Buscar", 
                 command=self.buscar_articulos).pack(side='left', padx=5)
         
+        # Botón para agregar producto
+        ttk.Button(frame_busqueda, text="Agregar Producto", command=self.abrir_ventana_agregar_producto).pack(side='left', padx=5)
+        
         # Frame principal dividido en dos
         frame_principal = ttk.PanedWindow(self.tab_inventario, orient=tk.HORIZONTAL)
         frame_principal.pack(fill='both', expand=True, padx=5, pady=5)
@@ -652,6 +655,10 @@ class Aplicacion:
         success, message = self.db.exportar_a_csv('personas')
         messagebox.showinfo("Exportar a Excel", message)
 
+    def abrir_ventana_agregar_producto(self):
+        ventana = tk.Toplevel(self.root)
+        VentanaAgregarProducto(ventana, self)
+
 class VentanaTransacciones:
     def __init__(self, master, app, db):
         self.master = master
@@ -807,6 +814,58 @@ class VentanaAgregarPersona:
             self.app.actualizar_lista_personas()  # Actualizar la lista de personas
         else:
             messagebox.showerror("Error", "No se pudo agregar la persona. Verifique los datos.")
+
+class VentanaAgregarProducto:
+    def __init__(self, master, app):
+        self.master = master
+        self.app = app
+        self.master.title("Agregar Producto")
+        self.master.geometry("300x400")
+
+        # Campos para ingresar datos
+        ttk.Label(master, text="Nombre del Artículo:").pack(pady=5)
+        self.entry_nombre_articulo = ttk.Entry(master)
+        self.entry_nombre_articulo.pack(pady=5)
+
+        ttk.Label(master, text="Descripción:").pack(pady=5)
+        self.entry_descripcion = ttk.Entry(master)
+        self.entry_descripcion.pack(pady=5)
+
+        ttk.Label(master, text="Cantidad Disponible:").pack(pady=5)
+        self.entry_cantidad = ttk.Entry(master)
+        self.entry_cantidad.pack(pady=5)
+
+        ttk.Label(master, text="Fecha de Ingreso:").pack(pady=5)
+        self.entry_fecha_ingreso = DateEntry(master, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_ingreso.pack(pady=5)
+
+        # Botón para agregar producto
+        ttk.Button(master, text="Agregar", command=self.agregar_producto).pack(pady=10)
+
+    def agregar_producto(self):
+        nombre_articulo = self.entry_nombre_articulo.get()
+        descripcion = self.entry_descripcion.get()
+        cantidad_disponible = self.entry_cantidad.get()
+        fecha_ingreso = self.entry_fecha_ingreso.get()
+
+        # Validar campos obligatorios
+        if not nombre_articulo or not cantidad_disponible:
+            messagebox.showwarning("Advertencia", "Nombre del artículo y cantidad son obligatorios.")
+            return
+
+        try:
+            cantidad_disponible = int(cantidad_disponible)  # Convertir a entero
+        except ValueError:
+            messagebox.showwarning("Error", "La cantidad debe ser un número.")
+            return
+
+        # Agregar el producto a la base de datos
+        if self.app.db.agregar_articulo(nombre_articulo, descripcion, cantidad_disponible, None, fecha_ingreso):
+            messagebox.showinfo("Éxito", "Producto agregado correctamente")
+            self.master.destroy()  # Cerrar la ventana
+            self.app.actualizar_lista_inventario()  # Actualizar la lista de inventario
+        else:
+            messagebox.showerror("Error", "No se pudo agregar el producto. Verifique los datos.")
 
 # Para abrir la ventana de transacciones
 def abrir_ventana_transacciones(app, db):
