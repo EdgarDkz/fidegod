@@ -117,9 +117,9 @@ class GestionDB:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             if filtro:
-                cursor.execute('''
+                cursor.execute(''' 
                 SELECT * FROM inventario 
-                WHERE nombre_articulo LIKE ? OR descripcion LIKE ?
+                WHERE nombre_articulo LIKE ? OR descripcion LIKE ? 
                 ''', (f'%{filtro}%', f'%{filtro}%'))
             else:
                 cursor.execute('SELECT * FROM inventario')
@@ -395,5 +395,23 @@ class GestionDB:
             cursor = conexion.cursor()
             cursor.execute('SELECT DISTINCT articulo FROM personas')
             return [row[0] for row in cursor.fetchall()]
+        finally:
+            conexion.close()
+
+    def obtener_transacciones_filtradas(self, tipo, fecha_desde, fecha_hasta):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            query = '''
+                SELECT t.id, i.nombre_articulo AS articulo, t.tipo, t.cantidad, 
+                       t.stock_actual AS "stock sin transaccion", 
+                       (t.stock_actual + CASE WHEN t.tipo = 'entrada' THEN t.cantidad ELSE -t.cantidad END) AS "stock con transaccion", 
+                       t.fecha 
+                FROM transacciones t 
+                JOIN inventario i ON t.id_articulo = i.id
+                WHERE t.tipo = ? AND t.fecha BETWEEN ? AND ?
+            '''
+            cursor.execute(query, (tipo, fecha_desde, fecha_hasta))
+            return cursor.fetchall()
         finally:
             conexion.close()

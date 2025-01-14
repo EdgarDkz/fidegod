@@ -256,6 +256,37 @@ class Aplicacion:
         self.actualizar_lista_inventario()
 
     def setup_transacciones_tab(self):
+        # Crear marco para filtrado
+        frame_filtro = ttk.LabelFrame(self.tab_transacciones, text="Filtrar Transacciones")
+        frame_filtro.pack(fill='x', padx=5, pady=5)
+
+        # Tipo de transacción
+        ttk.Label(frame_filtro, text="Tipo:").grid(row=0, column=0, padx=5, pady=5)
+        self.combo_tipo = ttk.Combobox(frame_filtro, values=["entrada", "salida"])
+        self.combo_tipo.grid(row=0, column=1, padx=5, pady=5)
+
+        # Checkbox para activar/desactivar filtrado por fecha
+        self.filtrar_fecha_var = tk.BooleanVar()
+        ttk.Checkbutton(frame_filtro, text="Filtrar por Fecha", variable=self.filtrar_fecha_var, command=self.toggle_fecha).grid(row=0, column=2, padx=5, pady=5)
+
+        # Campos de fecha
+        ttk.Label(frame_filtro, text="Desde:").grid(row=1, column=0, padx=5, pady=5)
+        self.entry_fecha_desde = DateEntry(frame_filtro, width=10, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_desde.grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(frame_filtro, text="Hasta:").grid(row=1, column=2, padx=5, pady=5)
+        self.entry_fecha_hasta = DateEntry(frame_filtro, width=10, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_hasta.grid(row=1, column=3, padx=5, pady=5)
+
+        # Filtro por artículo
+        ttk.Label(frame_filtro, text="Artículo:").grid(row=0, column=3, padx=5, pady=5)
+        self.combo_articulo = ttk.Combobox(frame_filtro)
+        self.combo_articulo.grid(row=0, column=4, padx=5, pady=5)
+        self.cargar_articulos()  # Método para cargar artículos en el combobox
+
+        # Botón para filtrar
+        ttk.Button(frame_filtro, text="Filtrar", command=self.filtrar_transacciones).grid(row=2, columnspan=5, pady=10)
+
         # Crear TreeView para mostrar transacciones
         self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Stock sin Transacción', 'Stock con Transacción', 'Fecha'), show='headings')
         self.tree_transacciones.pack(fill='both', expand=True, padx=5, pady=5)
@@ -272,6 +303,47 @@ class Aplicacion:
 
         # Cargar datos iniciales
         self.actualizar_lista_transacciones()
+
+    def toggle_fecha(self):
+        estado = self.filtrar_fecha_var.get()
+        self.entry_fecha_desde.config(state='normal' if estado else 'disabled')
+        self.entry_fecha_hasta.config(state='normal' if estado else 'disabled')
+
+    def cargar_articulos(self):
+        articulos = self.db.obtener_inventario()  # Obtener artículos de la base de datos
+        self.combo_articulo['values'] = [articulo[1] for articulo in articulos]  # Suponiendo que el nombre del artículo está en la segunda columna
+
+    def filtrar_transacciones(self):
+        tipo = self.combo_tipo.get()
+        fecha_desde = self.entry_fecha_desde.get()
+        fecha_hasta = self.entry_fecha_hasta.get()
+
+        # Verificar si se seleccionó un tipo
+        if not tipo:
+            messagebox.showwarning("Advertencia", "Por favor, seleccione un tipo de transacción.")
+            return
+
+        # Verificar si las fechas son válidas
+        if not fecha_desde or not fecha_hasta:
+            messagebox.showwarning("Advertencia", "Por favor, ingrese un rango de fechas.")
+            return
+
+        transacciones = self.app.obtener_transacciones_filtradas(tipo, fecha_desde, fecha_hasta)
+
+        # Limpiar el TreeView
+        for item in self.tree_transacciones.get_children():
+            self.tree_transacciones.delete(item)
+
+        # Insertar las transacciones filtradas
+        if transacciones:
+            for transaccion in transacciones:
+                self.tree_transacciones.insert('', 'end', values=transaccion)
+        else:
+            messagebox.showinfo("Información", "No se encontraron transacciones para los criterios seleccionados.")
+
+    def exportar_transacciones(self):
+        success, message = self.db.exportar_a_csv('transacciones')
+        messagebox.showinfo("Exportar a CSV", message)
 
     def setup_personas_tab(self):
         # Crear TreeView para mostrar personas
@@ -659,13 +731,29 @@ class Aplicacion:
         ventana = tk.Toplevel(self.root)
         VentanaAgregarProducto(ventana, self)
 
+    def eliminar_transaccion(self):
+        seleccion = self.tree_transacciones.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione una transacción para eliminar")
+            return
+        
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar esta transacción?"):
+            item = self.tree_transacciones.item(seleccion[0])
+            id_transaccion = item['values'][0]  # Asumiendo que el ID es el primer valor
+            
+            if self.db.eliminar_transaccion(id_transaccion):
+                messagebox.showinfo("Éxito", "Transacción eliminada correctamente")
+                self.actualizar_lista_transacciones()  # Actualizar la lista de transacciones
+            else:
+                messagebox.showerror("Error", "No se pudo eliminar la transacción")
+
 class VentanaTransacciones:
     def __init__(self, master, app, db):
         self.master = master
         self.app = app  # Guardar referencia a la instancia principal
         self.db = db
         self.master.title("Registrar Transacción")
-        self.master.geometry("400x300")  # Tamaño de la ventana
+        self.master.geometry("400x300")
 
         # Agregar un marco para el diseño
         frame = ttk.Frame(master, padding="10")
@@ -675,7 +763,7 @@ class VentanaTransacciones:
         tk.Label(frame, text="Seleccionar Artículo:").grid(row=0, column=0, padx=5, pady=5)
         self.combo_articulos = ttk.Combobox(frame)
         self.combo_articulos.grid(row=0, column=1, padx=5, pady=5)
-        self.cargar_articulos()
+        self.cargar_articulos()  # Cargar artículos al inicializar
 
         # Tipo de transacción
         tk.Label(frame, text="Tipo de Transacción:").grid(row=1, column=0, padx=5, pady=5)
@@ -702,9 +790,8 @@ class VentanaTransacciones:
         self.boton_registrar.grid(row=5, columnspan=2, pady=10)
 
     def cargar_articulos(self):
-        articulos = self.db.obtener_inventario()
-        nombres_articulos = [articulo[1] for articulo in articulos]  # Suponiendo que el nombre está en la segunda columna
-        self.combo_articulos['values'] = nombres_articulos
+        articulos = self.db.obtener_inventario()  # Obtener artículos de la base de datos
+        self.combo_articulos['values'] = [articulo[1] for articulo in articulos]  # Suponiendo que el nombre del artículo está en la segunda columna
 
     def registrar_transaccion(self):
         articulo_seleccionado = self.combo_articulos.get()
