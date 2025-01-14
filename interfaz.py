@@ -267,7 +267,7 @@ class Aplicacion:
 
         # Checkbox para activar/desactivar filtrado por fecha
         self.filtrar_fecha_var = tk.BooleanVar()
-        ttk.Checkbutton(frame_filtro, text="Filtrar por Fecha", variable=self.filtrar_fecha_var, command=self.toggle_fecha).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Checkbutton(frame_filtro, text="Todas las fechas", variable=self.filtrar_fecha_var, command=self.toggle_fecha).grid(row=0, column=2, padx=5, pady=5)
 
         # Campos de fecha
         ttk.Label(frame_filtro, text="Desde:").grid(row=1, column=0, padx=5, pady=5)
@@ -306,8 +306,14 @@ class Aplicacion:
 
     def toggle_fecha(self):
         estado = self.filtrar_fecha_var.get()
-        self.entry_fecha_desde.config(state='normal' if estado else 'disabled')
-        self.entry_fecha_hasta.config(state='normal' if estado else 'disabled')
+        if estado:
+            # Si está marcada, deshabilitar los campos de fecha
+            self.entry_fecha_desde.config(state='disabled')
+            self.entry_fecha_hasta.config(state='disabled')
+        else:
+            # Si está desmarcada, habilitar los campos de fecha
+            self.entry_fecha_desde.config(state='normal')
+            self.entry_fecha_hasta.config(state='normal')
 
     def cargar_articulos(self):
         articulos = self.db.obtener_inventario()  # Obtener artículos de la base de datos
@@ -323,12 +329,15 @@ class Aplicacion:
             messagebox.showwarning("Advertencia", "Por favor, seleccione un tipo de transacción.")
             return
 
-        # Verificar si las fechas son válidas
-        if not fecha_desde or not fecha_hasta:
-            messagebox.showwarning("Advertencia", "Por favor, ingrese un rango de fechas.")
-            return
-
-        transacciones = self.app.obtener_transacciones_filtradas(tipo, fecha_desde, fecha_hasta)
+        # Si la casilla está marcada, ignorar las fechas y tomar todas
+        if self.filtrar_fecha_var.get():
+            transacciones = self.app.obtener_transacciones_filtradas(tipo, None, None)
+        else:
+            # Si no se filtra por fecha, usar las fechas ingresadas
+            if not fecha_desde or not fecha_hasta:
+                messagebox.showwarning("Advertencia", "Por favor, ingrese un rango de fechas.")
+                return
+            transacciones = self.app.obtener_transacciones_filtradas(tipo, fecha_desde, fecha_hasta)
 
         # Limpiar el TreeView
         for item in self.tree_transacciones.get_children():
@@ -337,7 +346,9 @@ class Aplicacion:
         # Insertar las transacciones filtradas
         if transacciones:
             for transaccion in transacciones:
-                self.tree_transacciones.insert('', 'end', values=transaccion)
+                # Formatear la fecha para mostrar solo el día (sin hora ni segundos)
+                fecha_formateada = transaccion[6].split(" ")[0]  # Suponiendo que la fecha está en el índice 6
+                self.tree_transacciones.insert('', 'end', values=(transaccion[0], transaccion[1], transaccion[2], transaccion[3], transaccion[4], transaccion[5], fecha_formateada))
         else:
             messagebox.showinfo("Información", "No se encontraron transacciones para los criterios seleccionados.")
 
@@ -717,7 +728,9 @@ class Aplicacion:
         # Obtener y mostrar las transacciones
         transacciones = self.db.obtener_transacciones()  # Asegúrate de tener este método en tu clase GestionDB
         for transaccion in transacciones:
-            self.tree_transacciones.insert('', 'end', values=transaccion)
+            # Formatear la fecha para mostrar solo el día (sin hora ni segundos)
+            fecha_formateada = transaccion[6].split(" ")[0]  # Suponiendo que la fecha está en el índice 6
+            self.tree_transacciones.insert('', 'end', values=(transaccion[0], transaccion[1], transaccion[2], transaccion[3], transaccion[4], transaccion[5], fecha_formateada))
 
     def abrir_ventana_agregar_persona(self):
         ventana = tk.Toplevel()

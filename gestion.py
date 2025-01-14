@@ -409,9 +409,15 @@ class GestionDB:
                        t.fecha 
                 FROM transacciones t 
                 JOIN inventario i ON t.id_articulo = i.id
-                WHERE t.tipo = ? AND t.fecha BETWEEN ? AND ?
+                WHERE t.tipo = ?
             '''
-            cursor.execute(query, (tipo, fecha_desde, fecha_hasta))
+            params = [tipo]
+
+            if fecha_desde and fecha_hasta:  # Solo agregar el filtro de fecha si ambos están presentes
+                query += ' AND t.fecha BETWEEN ? AND ?'
+                params.extend([fecha_desde, fecha_hasta])
+
+            cursor.execute(query, params)
             return cursor.fetchall()
         finally:
             conexion.close()
