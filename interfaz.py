@@ -175,24 +175,28 @@ class Aplicacion:
         frame_principal = ttk.PanedWindow(self.tab_inventario, orient=tk.HORIZONTAL)
         frame_principal.pack(fill='both', expand=True, padx=5, pady=5)
         
-        # Frame para detalles del artículo
+        # Crear un marco para los detalles del artículo
         self.frame_detalles_articulo = ttk.LabelFrame(self.tab_inventario, text="Detalles del Artículo")
         self.frame_detalles_articulo.pack(fill='x', padx=5, pady=5)
-        
+
+        # Crear un marco para agrupar los campos
+        frame_campos = ttk.Frame(self.frame_detalles_articulo)
+        frame_campos.grid(row=0, column=0, padx=5, pady=5)
+
         # Campos del formulario
         self.campos_inventario = {}
         campos_normales = [
             ('Nombre del Artículo:', 'nombre_articulo'), 
             ('Descripción:', 'descripcion'), 
             ('Cantidad Disponible:', 'cantidad_disponible'),
-            ('Fecha de Ingreso:', 'fecha_ingreso')  # Asegúrate de que este campo esté aquí
+            ('Fecha de Ingreso:', 'fecha_ingreso')
         ]
-        
+
         # Crear campos normales (Entry y DateEntry)
         for i, (label, campo) in enumerate(campos_normales):
-            ttk.Label(self.frame_detalles_articulo, text=label).grid(row=i, column=0, padx=5, pady=2)
+            ttk.Label(frame_campos, text=label).grid(row=i, column=0, padx=5, pady=2, sticky=tk.W)  # Alinear a la izquierda
             if campo == 'fecha_ingreso':
-                date_entry = DateEntry(self.frame_detalles_articulo, 
+                date_entry = DateEntry(frame_campos, 
                                        width=20,
                                        background='darkblue',
                                        foreground='white',
@@ -201,33 +205,28 @@ class Aplicacion:
                 date_entry.grid(row=i, column=1, padx=5, pady=2)
                 self.campos_inventario[campo] = date_entry
             else:
-                entry = ttk.Entry(self.frame_detalles_articulo)
+                entry = ttk.Entry(frame_campos)
                 entry.grid(row=i, column=1, padx=5, pady=2)
                 self.campos_inventario[campo] = entry
-        
-        # Frame para la imagen (mover a la derecha)
+
+        # Frame para la imagen
         frame_imagen = ttk.LabelFrame(self.frame_detalles_articulo, text="Imagen del Artículo")
-        frame_imagen.grid(row=0, column=2, rowspan=len(campos_normales), padx=5, pady=5)  # Cambiar a columna 2
-        
+        frame_imagen.grid(row=0, column=2, rowspan=len(campos_normales), padx=5, pady=5)
+
         # Label para mostrar la imagen
         self.label_imagen = ttk.Label(frame_imagen)
         self.label_imagen.pack(padx=5, pady=5)
-        
-        # Variable para guardar la ruta de la imagen
-        self.ruta_imagen = None
-        
+
         # Botones para la imagen
         ttk.Button(frame_imagen, text="Seleccionar Imagen", 
                 command=self.seleccionar_imagen).pack(side='left', padx=5)
         ttk.Button(frame_imagen, text="Eliminar Imagen", 
                 command=self.eliminar_imagen).pack(side='left', padx=5)
-        
+
         # Botones de acción
         frame_botones = ttk.Frame(self.frame_detalles_articulo)
-        frame_botones.grid(row=len(campos_normales)+1, column=0, columnspan=3, pady=10)  # Cambiar a 3 columnas
-        
-        ttk.Button(frame_botones, text="Agregar", 
-                command=self.agregar_articulo).pack(side='left', padx=5)
+        frame_botones.grid(row=len(campos_normales), column=0, columnspan=2, pady=10)
+
         ttk.Button(frame_botones, text="Actualizar", 
                 command=self.actualizar_articulo).pack(side='left', padx=5)
         ttk.Button(frame_botones, text="Eliminar", 
