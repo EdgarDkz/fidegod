@@ -148,6 +148,8 @@ class Aplicacion:
         # Cargar nombres y artículos en los comboboxes
         self.cargar_nombres_y_articulos()
 
+        ttk.Button(self.tab_personas, text="Editar Persona", command=self.abrir_ventana_editar_persona).pack(pady=10)
+
     def cargar_nombres_y_articulos(self):
         # Obtener nombres y artículos de la base de datos
         nombres = self.db.obtener_nombres()
@@ -396,23 +398,33 @@ class Aplicacion:
             self.tree_personas.insert('', 'end', values=persona)
 
     def agregar_persona(self):
-        valores = {campo: entry.get() for campo, entry in self.campos_persona.items()}
-        
-        # Solo asignar la fecha de entrega si la casilla está marcada
-        if self.entregado_var.get():
-            valores['fecha_entrega'] = self.campos_persona['fecha_entrega'].get()
-        else:
-            valores['fecha_entrega'] = None  # O puedes dejarlo vacío según tu lógica
+        # Recoger los datos de los campos de entrada
+        nombre = self.entry_nombre.get()
+        articulo = self.entry_articulo.get()
+        telefono = self.entry_telefono.get()
+        direccion = self.entry_direccion.get()
+        municipio = self.combobox_municipio.get()
+        fecha_peticion = self.entry_fecha_peticion.get()
+        fecha_entrega = self.entry_fecha_entrega.get() if not self.check_pendiente.get() else None
 
-        if not valores['nombre']:
-            messagebox.showwarning("Error", "El nombre es obligatorio")
-            return
-        if self.db.agregar_persona(**valores):
+        # Crear un diccionario con los valores
+        valores = {
+            'nombre': nombre,
+            'articulo': articulo,
+            'telefono': telefono,
+            'direccion': direccion,
+            'municipio': municipio,
+            'fecha_peticion': fecha_peticion,
+            'fecha_entrega': fecha_entrega
+        }
+
+        # Llamar al método para agregar la persona
+        if self.app.db.agregar_persona(**valores):
             messagebox.showinfo("Éxito", "Persona agregada correctamente")
-            self.limpiar_campos_persona()
-            self.actualizar_lista_personas()
+            self.master.destroy()  # Cerrar la ventana
+            self.app.actualizar_lista_personas()  # Actualizar la lista de personas
         else:
-            messagebox.showerror("Error", "No se pudo agregar la persona")
+            messagebox.showerror("Error", "No se pudo agregar la persona. Verifique los datos.")
 
     def actualizar_persona(self):
         seleccion = self.tree_personas.selection()
@@ -759,6 +771,17 @@ class Aplicacion:
             else:
                 messagebox.showerror("Error", "No se pudo eliminar la transacción")
 
+    def abrir_ventana_editar_persona(self):
+        seleccion = self.tree_personas.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione una persona para editar")
+            return
+
+        item = self.tree_personas.item(seleccion[0])
+        valores = item['values'][1:]  # Tomar todos los valores desde el nombre en adelante
+        ventana = tk.Toplevel()
+        VentanaEditarPersona(ventana, self, valores)
+
 class VentanaTransacciones:
     def __init__(self, master, app, db):
         self.master = master
@@ -895,19 +918,21 @@ class VentanaAgregarPersona:
         direccion = self.entry_direccion.get()
         municipio = self.combobox_municipio.get()
         fecha_peticion = self.entry_fecha_peticion.get()
+        fecha_entrega = self.entry_fecha_entrega.get() if not self.check_pendiente.get() else None
 
-        # Manejar la fecha de entrega
-        if self.check_pendiente.get():
-            fecha_entrega = None  # O puedes usar un valor específico para indicar que está pendiente
-        else:
-            fecha_entrega = self.entry_fecha_entrega.get()
+        # Crear un diccionario con los valores
+        valores = {
+            'nombre': nombre,
+            'articulo': articulo,
+            'telefono': telefono,
+            'direccion': direccion,
+            'municipio': municipio,
+            'fecha_peticion': fecha_peticion,
+            'fecha_entrega': fecha_entrega
+        }
 
-        # Validar campos obligatorios
-        if not nombre or not telefono:
-            messagebox.showwarning("Advertencia", "Nombre y Teléfono son obligatorios.")
-            return
-
-        if self.app.db.agregar_persona(nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+        # Llamar al método para agregar la persona
+        if self.app.db.agregar_persona(**valores):
             messagebox.showinfo("Éxito", "Persona agregada correctamente")
             self.master.destroy()  # Cerrar la ventana
             self.app.actualizar_lista_personas()  # Actualizar la lista de personas
@@ -965,6 +990,102 @@ class VentanaAgregarProducto:
             self.app.actualizar_lista_inventario()  # Actualizar la lista de inventario
         else:
             messagebox.showerror("Error", "No se pudo agregar el producto. Verifique los datos.")
+
+class VentanaEditarPersona:
+    def __init__(self, master, app, valores):
+        self.master = master
+        self.app = app
+        self.master.title("Editar Persona")
+        self.master.geometry("300x400")
+
+        # Crear un marco para el diseño
+        frame = ttk.Frame(master, padding="10")
+        frame.pack(fill='both', expand=True)
+
+        # Campos para ingresar datos
+        ttk.Label(frame, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_nombre = ttk.Entry(frame)
+        self.entry_nombre.grid(row=0, column=1, padx=5, pady=5)
+        self.entry_nombre.insert(0, valores[0])  # Cargar el nombre
+
+        ttk.Label(frame, text="Artículo:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_articulo = ttk.Entry(frame)
+        self.entry_articulo.grid(row=1, column=1, padx=5, pady=5)
+        self.entry_articulo.insert(0, valores[1])  # Cargar el artículo
+
+        ttk.Label(frame, text="Teléfono:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_telefono = ttk.Entry(frame)
+        self.entry_telefono.grid(row=2, column=1, padx=5, pady=5)
+        self.entry_telefono.insert(0, valores[2])  # Cargar el teléfono
+
+        ttk.Label(frame, text="Dirección:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_direccion = ttk.Entry(frame)
+        self.entry_direccion.grid(row=3, column=1, padx=5, pady=5)
+        self.entry_direccion.insert(0, valores[3])  # Cargar la dirección
+
+        ttk.Label(frame, text="Municipio:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+        self.combobox_municipio = ttk.Combobox(frame, values=self.app.municipios)
+        self.combobox_municipio.grid(row=4, column=1, padx=5, pady=5)
+        self.combobox_municipio.set(valores[4])  # Cargar el municipio
+
+        ttk.Label(frame, text="Fecha Petición:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_fecha_peticion = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_peticion.grid(row=5, column=1, padx=5, pady=5)
+        self.entry_fecha_peticion.set_date(valores[5])  # Cargar la fecha de petición
+
+        ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+        self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_entrega.grid(row=6, column=1, padx=5, pady=5)
+
+        # Verificar si la fecha de entrega es None
+        if valores[6] is None:
+            self.entry_fecha_entrega.set_date(datetime.now())  # O puedes establecer una fecha predeterminada
+            self.check_pendiente = tk.BooleanVar(value=True)  # Marcar como pendiente
+            self.entry_fecha_entrega.config(state='readonly')  # Hacerlo de solo lectura
+        else:
+            self.entry_fecha_entrega.set_date(valores[6])  # Cargar la fecha de entrega
+            self.check_pendiente = tk.BooleanVar(value=False)  # No está pendiente
+
+        # Checkbutton para marcar la fecha de entrega como pendiente
+        ttk.Checkbutton(frame, text="Fecha de Entrega Pendiente", variable=self.check_pendiente, command=self.toggle_fecha_entrega).grid(row=7, columnspan=2, pady=5)
+
+        # Botones para actualizar y cancelar
+        ttk.Button(frame, text="Actualizar", command=self.actualizar_persona).grid(row=8, column=0, pady=10)
+        ttk.Button(frame, text="Cancelar", command=self.master.destroy).grid(row=8, column=1, pady=10)
+
+    def toggle_fecha_entrega(self):
+        if self.check_pendiente.get():
+            self.entry_fecha_entrega.config(state='normal')  # Habilitar el campo
+            self.entry_fecha_entrega.set_date(datetime.now())  # Establecer una fecha predeterminada
+        else:
+            self.entry_fecha_entrega.config(state='normal')  # Habilitar el campo para editar
+
+    def actualizar_persona(self):
+        nombre = self.entry_nombre.get()
+        articulo = self.entry_articulo.get()
+        telefono = self.entry_telefono.get()
+        direccion = self.entry_direccion.get()
+        municipio = self.combobox_municipio.get()
+        fecha_peticion = self.entry_fecha_peticion.get()
+        fecha_entrega = None if self.check_pendiente.get() else self.entry_fecha_entrega.get()
+
+        # Validar campos obligatorios
+        if not nombre or not telefono:
+            messagebox.showwarning("Advertencia", "Nombre y Teléfono son obligatorios.")
+            return
+
+        # Obtener el ID de la persona seleccionada
+        seleccion = self.app.tree_personas.selection()
+        item = self.app.tree_personas.item(seleccion[0])
+        id_persona = item['values'][0]  # Obtener el ID
+
+        # Actualizar la persona en la base de datos
+        if self.app.db.actualizar_persona(id_persona, nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+            messagebox.showinfo("Éxito", "Persona actualizada correctamente")
+            self.master.destroy()  # Cerrar la ventana
+            self.app.actualizar_lista_personas()  # Actualizar la lista de personas
+        else:
+            messagebox.showerror("Error", "No se pudo actualizar la persona. Verifique los datos.")
 
 # Para abrir la ventana de transacciones
 def abrir_ventana_transacciones(app, db):

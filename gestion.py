@@ -14,10 +14,11 @@ class GestionDB:
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            cursor.execute('''
+            cursor.execute(''' 
             INSERT INTO personas (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?) 
             ''', (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega))
+            
             conexion.commit()
             return True
         except Exception as e:
@@ -48,15 +49,16 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def actualizar_persona(self, id, nombre, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+    def actualizar_persona(self, id, nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            cursor.execute('''
+            cursor.execute(''' 
             UPDATE personas 
-            SET nombre=?, telefono=?, direccion=?, municipio=?, fecha_peticion=?, fecha_entrega=?
-            WHERE id=?
-            ''', (nombre, telefono, direccion, municipio, fecha_peticion, fecha_entrega, id))
+            SET nombre=?, articulo=?, telefono=?, direccion=?, municipio=?, fecha_peticion=?, fecha_entrega=?
+            WHERE id=? 
+            ''', (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega, id))
+            
             conexion.commit()
             return True
         except Exception as e:
@@ -419,5 +421,14 @@ class GestionDB:
 
             cursor.execute(query, params)
             return cursor.fetchall()
+        finally:
+            conexion.close()
+
+    def obtener_persona_por_id(self, id):
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            cursor.execute('SELECT * FROM personas WHERE id=?', (id,))
+            return cursor.fetchone()  # Esto devolverá una tupla con todos los datos de la persona
         finally:
             conexion.close()
