@@ -44,9 +44,13 @@ class Aplicacion:
         ttk.Button(frame_botones, text="Editar Persona", 
                 command=self.abrir_ventana_editar_persona).grid(row=0, column=1, padx=5)
         
+        # Botón para establecer fecha de entrega
+        ttk.Button(frame_botones, text="Establecer Fecha de Entrega", 
+                command=self.abrir_ventana_fecha_entrega).grid(row=0, column=2, padx=5)
+        
         # Botón para eliminar persona
         ttk.Button(frame_botones, text="Eliminar Persona", 
-                command=self.eliminar_persona).grid(row=0, column=2, padx=5)
+                command=self.eliminar_persona).grid(row=0, column=7, padx=5)
         
         # Ocultar detalles de persona
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
@@ -796,6 +800,17 @@ class Aplicacion:
         ventana = tk.Toplevel()
         VentanaEditarPersona(ventana, self, valores)
 
+    def abrir_ventana_fecha_entrega(self):
+        seleccion = self.tree_personas.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione una persona para establecer la fecha de entrega")
+            return
+
+        item = self.tree_personas.item(seleccion[0])
+        valores = item['values']
+        ventana = tk.Toplevel()
+        VentanaFechaEntrega(ventana, self, valores[0])  # Pasar el ID de la persona
+
 class VentanaTransacciones:
     def __init__(self, master, app, db):
         self.master = master
@@ -1093,6 +1108,38 @@ class VentanaEditarPersona:
             self.app.actualizar_lista_personas()  # Actualizar la lista de personas
         else:
             messagebox.showerror("Error", "No se pudo actualizar la persona. Verifique los datos.")
+
+class VentanaFechaEntrega:
+    def __init__(self, master, app, id_persona):
+        self.master = master
+        self.app = app
+        self.id_persona = id_persona
+        self.master.title("Establecer Fecha de Entrega")
+        self.master.geometry("300x200")
+
+        # Crear un marco para el diseño
+        frame = ttk.Frame(master, padding="10")
+        frame.pack(fill='both', expand=True)
+
+        # Campo para seleccionar la fecha
+        ttk.Label(frame, text="Fecha de Entrega:").grid(row=0, column=0, padx=5, pady=5)
+        self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_entrega.grid(row=0, column=1, padx=5, pady=5)
+
+        # Botones para confirmar y cancelar
+        ttk.Button(frame, text="Confirmar Entrega", command=self.confirmar_entrega).grid(row=1, column=0, pady=10)
+        ttk.Button(frame, text="Cancelar", command=self.master.destroy).grid(row=1, column=1, pady=10)
+
+    def confirmar_entrega(self):
+        fecha_entrega = self.entry_fecha_entrega.get()
+        
+        # Actualizar solo la fecha de entrega
+        if self.app.db.actualizar_persona(self.id_persona, fecha_entrega=fecha_entrega):
+            messagebox.showinfo("Éxito", "Fecha de entrega actualizada correctamente")
+            self.master.destroy()
+            self.app.actualizar_lista_personas()  # Actualizar la lista de personas
+        else:
+            messagebox.showerror("Error", "No se pudo actualizar la fecha de entrega")
 
 # Para abrir la ventana de transacciones
 def abrir_ventana_transacciones(app, db):

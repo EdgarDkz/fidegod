@@ -49,15 +49,26 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def actualizar_persona(self, id, nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+    def actualizar_persona(self, id, nombre=None, articulo=None, telefono=None, direccion=None, municipio=None, fecha_peticion=None, fecha_entrega=None):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            cursor.execute(''' 
+            
+            # Construir la consulta de actualización
+            query = ''' 
             UPDATE personas 
-            SET nombre=?, articulo=?, telefono=?, direccion=?, municipio=?, fecha_peticion=?, fecha_entrega=?
-            WHERE id=? 
-            ''', (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega, id))
+            SET 
+                nombre = COALESCE(?, nombre),
+                articulo = COALESCE(?, articulo),
+                telefono = COALESCE(?, telefono),
+                direccion = COALESCE(?, direccion),
+                municipio = COALESCE(?, municipio),
+                fecha_peticion = COALESCE(?, fecha_peticion),
+                fecha_entrega = COALESCE(?, fecha_entrega)
+            WHERE id = ? 
+            '''
+            
+            cursor.execute(query, (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega, id))
             
             conexion.commit()
             return True
