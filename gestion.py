@@ -64,7 +64,7 @@ class GestionDB:
                 direccion = COALESCE(?, direccion),
                 municipio = COALESCE(?, municipio),
                 fecha_peticion = COALESCE(?, fecha_peticion),
-                fecha_entrega = COALESCE(?, fecha_entrega)
+                fecha_entrega = ?
             WHERE id = ? 
             '''
             

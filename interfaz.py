@@ -463,11 +463,17 @@ class Aplicacion:
 
     # Métodos para gestión de personas
     def actualizar_lista_personas(self):
+        # Limpiar el TreeView
         for item in self.tree_personas.get_children():
             self.tree_personas.delete(item)
+        
+        # Obtener y mostrar las personas
         personas = self.db.obtener_personas()
         for persona in personas:
-            self.tree_personas.insert('', 'end', values=persona)
+            # Convertir None o 'None' a 'Pendiente' para mostrar en el TreeView
+            valores = list(persona)
+            valores[-1] = 'Pendiente' if valores[-1] in [None, 'None', ''] else valores[-1]
+            self.tree_personas.insert('', 'end', values=valores)
 
     def buscar_personas(self, event=None):
         nombre = self.combobox_nombre.get()
@@ -1119,87 +1125,134 @@ class VentanaEditarPersona:
         self.master.title("Editar Persona")
         self.master.geometry("300x400")
 
-        # Crear un marco para el diseño
+        # Marco principal
         frame = ttk.Frame(master, padding="10")
         frame.pack(fill='both', expand=True)
 
-        # Asignar valores a los campos
+        # Campos normales (mantener el código existente para estos campos)
         ttk.Label(frame, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.entry_nombre = ttk.Entry(frame)
         self.entry_nombre.grid(row=0, column=1, padx=5, pady=5)
-        self.entry_nombre.insert(0, valores[0])  # Cargar el nombre
+        self.entry_nombre.insert(0, valores[0])
 
         ttk.Label(frame, text="Artículo:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
         self.entry_articulo = ttk.Entry(frame)
         self.entry_articulo.grid(row=1, column=1, padx=5, pady=5)
-        self.entry_articulo.insert(0, valores[1])  # Cargar el artículo
+        self.entry_articulo.insert(0, valores[1])
 
         ttk.Label(frame, text="Teléfono:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
         self.entry_telefono = ttk.Entry(frame)
         self.entry_telefono.grid(row=2, column=1, padx=5, pady=5)
-        self.entry_telefono.insert(0, valores[2])  # Cargar el teléfono
+        self.entry_telefono.insert(0, valores[2])
 
         ttk.Label(frame, text="Dirección:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
         self.entry_direccion = ttk.Entry(frame)
         self.entry_direccion.grid(row=3, column=1, padx=5, pady=5)
-        self.entry_direccion.insert(0, valores[3])  # Cargar la dirección
+        self.entry_direccion.insert(0, valores[3])
 
         ttk.Label(frame, text="Municipio:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
         self.combobox_municipio = ttk.Combobox(frame, values=self.app.municipios)
         self.combobox_municipio.grid(row=4, column=1, padx=5, pady=5)
-        self.combobox_municipio.set(valores[4])  # Cargar el municipio
+        self.combobox_municipio.set(valores[4])
 
         ttk.Label(frame, text="Fecha Petición:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_fecha_peticion = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+        self.entry_fecha_peticion = DateEntry(frame, width=17, background='darkblue',
+                                            foreground='white', borderwidth=2,
+                                            date_pattern='yyyy-mm-dd')
         self.entry_fecha_peticion.grid(row=5, column=1, padx=5, pady=5)
-        self.entry_fecha_peticion.set_date(valores[5])  # Cargar la fecha de petición
+        self.entry_fecha_peticion.set_date(valores[5])
 
-        # Verificar si la fecha de entrega es None
-        if valores[6] == 'None':
-            # No mostrar el campo de fecha de entrega
-            ttk.Label(frame, text="Fecha de Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
-            ttk.Label(frame, text="No hay fecha de entrega").grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
-            self.check_pendiente = tk.BooleanVar(value=True)  # Marcar como pendiente
+        ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+        
+        # Frame especial para la fecha de entrega y su gestión
+        fecha_frame = ttk.Frame(frame)
+        fecha_frame.grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
+
+        # Variable para controlar el estado de la fecha
+        self.tiene_fecha = tk.BooleanVar(value=valores[6] not in [None, 'None', ''])
+        
+        # Radiobuttons para seleccionar si hay fecha o no
+        ttk.Radiobutton(fecha_frame, text="Sin fecha", 
+                       variable=self.tiene_fecha, 
+                       value=False,
+                       command=self.toggle_fecha_estado).pack(side='top', anchor='w')
+        
+        ttk.Radiobutton(fecha_frame, text="Con fecha", 
+                       variable=self.tiene_fecha, 
+                       value=True,
+                       command=self.toggle_fecha_estado).pack(side='top', anchor='w')
+
+        # DateEntry para la fecha
+        self.entry_fecha_entrega = DateEntry(fecha_frame, width=17, 
+                                           background='darkblue',
+                                           foreground='white', 
+                                           borderwidth=2,
+                                           date_pattern='yyyy-mm-dd')
+        self.entry_fecha_entrega.pack(side='top', pady=5)
+
+        # Establecer fecha inicial si existe
+        if valores[6] and valores[6] not in ['None', '']:
+            self.entry_fecha_entrega.set_date(valores[6])
+        
+        # Configurar estado inicial
+        self.toggle_fecha_estado()
+
+        # Botones
+        button_frame = ttk.Frame(frame)
+        button_frame.grid(row=8, column=0, columnspan=2, pady=20)
+        ttk.Button(button_frame, text="Actualizar", 
+                  command=self.actualizar_persona).pack(side='left', padx=5)
+        ttk.Button(button_frame, text="Cancelar", 
+                  command=self.master.destroy).pack(side='left', padx=5)
+
+    def toggle_fecha_estado(self):
+        """Controla la visibilidad y estado del campo de fecha"""
+        if self.tiene_fecha.get():
+            self.entry_fecha_entrega.config(state='normal')
         else:
-            ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
-            self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-            self.entry_fecha_entrega.grid(row=6, column=1, padx=5, pady=5)
-            self.entry_fecha_entrega.set_date(valores[6])  # Cargar la fecha de entrega
-            self.check_pendiente = tk.BooleanVar(value=False)  # No está pendiente
-
-        # Checkbutton para marcar la fecha de entrega como pendiente
-        ttk.Checkbutton(frame, text="Fecha de Entrega Pendiente", variable=self.check_pendiente).grid(row=7, columnspan=2, pady=5)
-
-        # Botones para actualizar y cancelar
-        ttk.Button(frame, text="Actualizar", command=self.actualizar_persona).grid(row=8, column=0, pady=10)
-        ttk.Button(frame, text="Cancelar", command=self.master.destroy).grid(row=8, column=1, pady=10)
+            self.entry_fecha_entrega.config(state='disabled')
 
     def actualizar_persona(self):
+        # Obtener valores básicos
         nombre = self.entry_nombre.get()
         articulo = self.entry_articulo.get()
         telefono = self.entry_telefono.get()
         direccion = self.entry_direccion.get()
         municipio = self.combobox_municipio.get()
         fecha_peticion = self.entry_fecha_peticion.get()
-        fecha_entrega = None if self.check_pendiente.get() else self.entry_fecha_entrega.get()
+        
+        # Determinar fecha de entrega
+        fecha_entrega = None if not self.tiene_fecha.get() else self.entry_fecha_entrega.get()
+        
+        print(f"Debug - fecha_entrega: {fecha_entrega}")  # Para depuración
 
-        # Validar campos obligatorios
-        if not nombre or not telefono:
-            messagebox.showwarning("Advertencia", "Nombre y Teléfono son obligatorios.")
-            return
-
-        # Obtener el ID de la persona seleccionada
+        # Obtener ID de la persona seleccionada
         seleccion = self.app.tree_personas.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "No hay persona seleccionada")
+            return
+            
         item = self.app.tree_personas.item(seleccion[0])
-        id_persona = item['values'][0]  # Obtener el ID
+        id_persona = item['values'][0]
 
-        # Actualizar la persona en la base de datos
-        if self.app.db.actualizar_persona(id_persona, nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
+        # Actualizar en la base de datos
+        if self.app.db.actualizar_persona(
+            id_persona,
+            nombre=nombre,
+            articulo=articulo,
+            telefono=telefono,
+            direccion=direccion,
+            municipio=municipio,
+            fecha_peticion=fecha_peticion,
+            fecha_entrega=fecha_entrega
+        ):
             messagebox.showinfo("Éxito", "Persona actualizada correctamente")
-            self.master.destroy()  # Cerrar la ventana
-            self.app.actualizar_lista_personas()  # Actualizar la lista de personas
+            self.master.destroy()
+            
+            # Forzar la actualización del TreeView
+            self.app.actualizar_lista_personas()
         else:
-            messagebox.showerror("Error", "No se pudo actualizar la persona. Verifique los datos.")
+            messagebox.showerror("Error", "No se pudo actualizar la persona")
 
 class VentanaFechaEntrega:
     def __init__(self, master, app, id_persona):
