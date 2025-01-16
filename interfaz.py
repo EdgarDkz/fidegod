@@ -40,9 +40,13 @@ class Aplicacion:
         ttk.Button(frame_botones, text="Agregar Persona", 
                 command=self.abrir_ventana_agregar_persona).grid(row=0, column=0, padx=5)
 
+        # Botón para editar persona
+        ttk.Button(frame_botones, text="Editar Persona", 
+                command=self.abrir_ventana_editar_persona).grid(row=0, column=1, padx=5)
+        
         # Botón para eliminar persona
         ttk.Button(frame_botones, text="Eliminar Persona", 
-                command=self.eliminar_persona).grid(row=0, column=1, padx=5)
+                command=self.eliminar_persona).grid(row=0, column=2, padx=5)
         
         # Ocultar detalles de persona
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
@@ -148,7 +152,7 @@ class Aplicacion:
         # Cargar nombres y artículos en los comboboxes
         self.cargar_nombres_y_articulos()
 
-        ttk.Button(self.tab_personas, text="Editar Persona", command=self.abrir_ventana_editar_persona).pack(pady=10)
+        
 
     def cargar_nombres_y_articulos(self):
         # Obtener nombres y artículos de la base de datos
@@ -643,8 +647,14 @@ class Aplicacion:
                 self.label_imagen.image = None  # Asegurarse de que la referencia se limpie
             
             # Establecer la fecha de ingreso en el DateEntry
-            if articulo and articulo[5]:  # Asegúrate de que este índice sea correcto
-                self.campos_inventario['fecha_ingreso'].set_date(articulo[5])  # Establecer la fecha
+            if isinstance(valores[5], str):  # Si es una cadena, intenta convertirla a fecha
+                try:
+                    fecha_peticion = datetime.strptime(valores[5], '%Y-%m-%d')  # Ajusta el formato según sea necesario
+                    self.campos_inventario['fecha_ingreso'].set_date(fecha_peticion)
+                except ValueError:
+                    print(f"Error: {valores[5]} no es una fecha válida.")
+            else:
+                self.campos_inventario['fecha_ingreso'].set_date(valores[5])  # Si ya es un objeto datetime
 
     def buscar_articulos(self):
         filtro = self.entry_busqueda_inventario.get()
@@ -778,7 +788,11 @@ class Aplicacion:
             return
 
         item = self.tree_personas.item(seleccion[0])
-        valores = item['values'][1:]  # Tomar todos los valores desde el nombre en adelante
+        valores = item['values'][1:]  # Ignorar el primer elemento (ID)
+
+        print("Valores seleccionados:", valores)  # Imprimir para depuración
+
+        # Crear la ventana de edición
         ventana = tk.Toplevel()
         VentanaEditarPersona(ventana, self, valores)
 
@@ -1002,7 +1016,7 @@ class VentanaEditarPersona:
         frame = ttk.Frame(master, padding="10")
         frame.pack(fill='both', expand=True)
 
-        # Campos para ingresar datos
+        # Asignar valores a los campos
         ttk.Label(frame, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.entry_nombre = ttk.Entry(frame)
         self.entry_nombre.grid(row=0, column=1, padx=5, pady=5)
@@ -1033,32 +1047,25 @@ class VentanaEditarPersona:
         self.entry_fecha_peticion.grid(row=5, column=1, padx=5, pady=5)
         self.entry_fecha_peticion.set_date(valores[5])  # Cargar la fecha de petición
 
-        ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-        self.entry_fecha_entrega.grid(row=6, column=1, padx=5, pady=5)
-
         # Verificar si la fecha de entrega es None
-        if valores[6] is None:
-            self.entry_fecha_entrega.set_date(datetime.now())  # O puedes establecer una fecha predeterminada
+        if valores[6] == 'None':
+            # No mostrar el campo de fecha de entrega
+            ttk.Label(frame, text="Fecha de Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+            ttk.Label(frame, text="No hay fecha de entrega").grid(row=6, column=1, padx=5, pady=5, sticky=tk.W)
             self.check_pendiente = tk.BooleanVar(value=True)  # Marcar como pendiente
-            self.entry_fecha_entrega.config(state='readonly')  # Hacerlo de solo lectura
         else:
+            ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
+            self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+            self.entry_fecha_entrega.grid(row=6, column=1, padx=5, pady=5)
             self.entry_fecha_entrega.set_date(valores[6])  # Cargar la fecha de entrega
             self.check_pendiente = tk.BooleanVar(value=False)  # No está pendiente
 
         # Checkbutton para marcar la fecha de entrega como pendiente
-        ttk.Checkbutton(frame, text="Fecha de Entrega Pendiente", variable=self.check_pendiente, command=self.toggle_fecha_entrega).grid(row=7, columnspan=2, pady=5)
+        ttk.Checkbutton(frame, text="Fecha de Entrega Pendiente", variable=self.check_pendiente).grid(row=7, columnspan=2, pady=5)
 
         # Botones para actualizar y cancelar
         ttk.Button(frame, text="Actualizar", command=self.actualizar_persona).grid(row=8, column=0, pady=10)
         ttk.Button(frame, text="Cancelar", command=self.master.destroy).grid(row=8, column=1, pady=10)
-
-    def toggle_fecha_entrega(self):
-        if self.check_pendiente.get():
-            self.entry_fecha_entrega.config(state='normal')  # Habilitar el campo
-            self.entry_fecha_entrega.set_date(datetime.now())  # Establecer una fecha predeterminada
-        else:
-            self.entry_fecha_entrega.config(state='normal')  # Habilitar el campo para editar
 
     def actualizar_persona(self):
         nombre = self.entry_nombre.get()
