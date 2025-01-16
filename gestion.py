@@ -411,7 +411,7 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def obtener_transacciones_filtradas(self, tipo, fecha_desde, fecha_hasta):
+    def obtener_transacciones_filtradas(self, tipo=None, fecha_desde=None, fecha_hasta=None, articulo=None):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
@@ -422,13 +422,19 @@ class GestionDB:
                        t.fecha 
                 FROM transacciones t 
                 JOIN inventario i ON t.id_articulo = i.id
-                WHERE t.tipo = ?
+                WHERE 1=1
             '''
-            params = [tipo]
+            params = []
 
-            if fecha_desde and fecha_hasta:  # Solo agregar el filtro de fecha si ambos están presentes
+            if tipo:
+                query += ' AND t.tipo = ?'
+                params.append(tipo)
+            if fecha_desde and fecha_hasta:
                 query += ' AND t.fecha BETWEEN ? AND ?'
                 params.extend([fecha_desde, fecha_hasta])
+            if articulo:
+                query += ' AND i.nombre_articulo = ?'
+                params.append(articulo)
 
             cursor.execute(query, params)
             return cursor.fetchall()

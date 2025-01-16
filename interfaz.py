@@ -356,34 +356,36 @@ class Aplicacion:
 
     def filtrar_transacciones(self, event=None):
         tipo = self.combo_tipo.get()
-        fecha_desde = self.entry_fecha_desde.get()
-        fecha_hasta = self.entry_fecha_hasta.get()
-
-        # Verificar si se seleccionó un tipo
-        if not tipo:
-            messagebox.showwarning("Advertencia", "Por favor, seleccione un tipo de transacción.")
-            return
-
-        # Si la casilla está marcada, ignorar las fechas y tomar todas
+        articulo = self.combo_articulo.get()
+        
+        # Si la casilla está marcada, no usar fechas
         if self.filtrar_fecha_var.get():
-            transacciones = self.app.obtener_transacciones_filtradas(tipo, None, None)
+            fecha_desde = None
+            fecha_hasta = None
         else:
-            # Si no se filtra por fecha, usar las fechas ingresadas
-            if not fecha_desde or not fecha_hasta:
-                messagebox.showwarning("Advertencia", "Por favor, ingrese un rango de fechas.")
-                return
-            transacciones = self.app.obtener_transacciones_filtradas(tipo, fecha_desde, fecha_hasta)
+            fecha_desde = self.entry_fecha_desde.get()
+            fecha_hasta = self.entry_fecha_hasta.get()
+
+        # Verificar si al menos un campo tiene valor
+        if not any([tipo, articulo, (fecha_desde and fecha_hasta)]):
+            messagebox.showwarning("Advertencia", "Por favor, ingrese al menos un criterio de búsqueda.")
+            return
 
         # Limpiar el TreeView
         for item in self.tree_transacciones.get_children():
             self.tree_transacciones.delete(item)
 
+        # Obtener transacciones filtradas
+        transacciones = self.app.obtener_transacciones_filtradas(tipo, fecha_desde, fecha_hasta, articulo)
+
         # Insertar las transacciones filtradas
         if transacciones:
             for transaccion in transacciones:
-                # Formatear la fecha para mostrar solo el día (sin hora ni segundos)
-                fecha_formateada = transaccion[6].split(" ")[0]  # Suponiendo que la fecha está en el índice 6
-                self.tree_transacciones.insert('', 'end', values=(transaccion[0], transaccion[1], transaccion[2], transaccion[3], transaccion[4], transaccion[5], fecha_formateada))
+                fecha_formateada = transaccion[6].split(" ")[0]
+                self.tree_transacciones.insert('', 'end', values=(
+                    transaccion[0], transaccion[1], transaccion[2], 
+                    transaccion[3], transaccion[4], transaccion[5], 
+                    fecha_formateada))
         else:
             messagebox.showinfo("Información", "No se encontraron transacciones para los criterios seleccionados.")
 
