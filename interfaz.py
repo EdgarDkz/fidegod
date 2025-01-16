@@ -311,6 +311,9 @@ class Aplicacion:
         self.combo_articulo = ttk.Combobox(frame_filtro)
         self.combo_articulo.grid(row=0, column=4, padx=5, pady=5)
 
+        # Llenar el combobox con artículos únicos
+        self.cargar_articulos_unicos()
+
         # Vincular el evento de Enter a la función de filtrado
         self.combo_articulo.bind("<Return>", self.filtrar_transacciones)
 
@@ -333,6 +336,12 @@ class Aplicacion:
 
         # Cargar datos iniciales
         self.actualizar_lista_transacciones()
+
+    def cargar_articulos_unicos(self):
+        # Obtener artículos de la base de datos
+        articulos = self.db.obtener_transacciones()  # Asegúrate de que este método devuelva las transacciones
+        articulos_unicos = set(transaccion[1] for transaccion in articulos)  # Suponiendo que el artículo está en la segunda columna
+        self.combo_articulo['values'] = list(articulos_unicos)  # Asignar los artículos únicos al combobox
 
     def toggle_fecha(self):
         estado = self.filtrar_fecha_var.get()
