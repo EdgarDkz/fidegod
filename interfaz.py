@@ -12,6 +12,19 @@ class Aplicacion:
         self.root.title("Sistema de Gestión")
         self.root.geometry("1200x700")
         
+        # Configurar el estilo general
+        style = ttk.Style()
+        style.theme_use('clam')  # Usar el tema 'clam' que es más moderno
+        
+        # Configurar colores y estilos
+        style.configure('TNotebook', background='#f0f0f0')
+        style.configure('TNotebook.Tab', padding=[10, 5], font=('Helvetica', 10))
+        style.configure('TFrame', background='#f0f0f0')
+        style.configure('TLabel', font=('Helvetica', 10))
+        style.configure('TButton', font=('Helvetica', 10), padding=5)
+        style.configure('Treeview', font=('Helvetica', 10))
+        style.configure('Treeview.Heading', font=('Helvetica', 10, 'bold'))
+        
         self.db = GestionDB()
         self.app = self.db
         
@@ -275,54 +288,88 @@ class Aplicacion:
         self.actualizar_lista_inventario()
 
     def setup_transacciones_tab(self):
-        # Crear marco para filtrado
-        frame_filtro = ttk.LabelFrame(self.tab_transacciones, text="Filtrar Transacciones")
-        frame_filtro.pack(fill='x', padx=5, pady=5)
+        # Estilo para los frames
+        style = ttk.Style()
+        style.configure('Custom.TFrame', background='#f0f0f0')
+        style.configure('Custom.TLabelframe', background='#f0f0f0')
+        style.configure('Custom.TButton', padding=5)
+        
+        # Frame principal con padding y estilo
+        main_frame = ttk.Frame(self.tab_transacciones, style='Custom.TFrame', padding="10")
+        main_frame.pack(fill='both', expand=True)
 
-        # Tipo de transacción
-        ttk.Label(frame_filtro, text="Tipo:").grid(row=0, column=0, padx=5, pady=5)
-        self.combo_tipo = ttk.Combobox(frame_filtro, values=["entrada", "salida"])
+        # Frame para filtros rápidos
+        quick_filter_frame = ttk.LabelFrame(main_frame, text="Filtros Rápidos", style='Custom.TLabelframe', padding="5")
+        quick_filter_frame.pack(fill='x', padx=5, pady=5)
+
+        # Botones de filtro rápido
+        ttk.Button(quick_filter_frame, text="Ver Todo", 
+                   command=self.mostrar_todas_transacciones,
+                   style='Custom.TButton').pack(side='left', padx=5)
+        ttk.Button(quick_filter_frame, text="Solo Entradas", 
+                   command=lambda: self.filtrar_por_tipo('entrada'),
+                   style='Custom.TButton').pack(side='left', padx=5)
+        ttk.Button(quick_filter_frame, text="Solo Salidas", 
+                   command=lambda: self.filtrar_por_tipo('salida'),
+                   style='Custom.TButton').pack(side='left', padx=5)
+
+        # Frame para filtros avanzados
+        filter_frame = ttk.LabelFrame(main_frame, text="Filtros Avanzados", style='Custom.TLabelframe', padding="5")
+        filter_frame.pack(fill='x', padx=5, pady=5)
+
+        # Grid para los filtros
+        ttk.Label(filter_frame, text="Tipo:").grid(row=0, column=0, padx=5, pady=5)
+        self.combo_tipo = ttk.Combobox(filter_frame, values=["", "entrada", "salida"])
         self.combo_tipo.grid(row=0, column=1, padx=5, pady=5)
 
-        # Vincular el evento de Enter a la función de filtrado
-        self.combo_tipo.bind("<Return>", self.filtrar_transacciones)
+        ttk.Label(filter_frame, text="Artículo:").grid(row=0, column=2, padx=5, pady=5)
+        self.combo_articulo = ttk.Combobox(filter_frame)
+        self.combo_articulo.grid(row=0, column=3, padx=5, pady=5)
 
-        # Checkbox para activar/desactivar filtrado por fecha
+        # Checkbox para todas las fechas
         self.filtrar_fecha_var = tk.BooleanVar()
-        ttk.Checkbutton(frame_filtro, text="Todas las fechas", variable=self.filtrar_fecha_var, command=self.toggle_fecha).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Checkbutton(filter_frame, text="Todas las fechas", 
+                        variable=self.filtrar_fecha_var,
+                        command=self.toggle_fecha).grid(row=1, column=0, columnspan=2)
 
-        # Campos de fecha
-        ttk.Label(frame_filtro, text="Desde:").grid(row=1, column=0, padx=5, pady=5)
-        self.entry_fecha_desde = DateEntry(frame_filtro, width=10, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-        self.entry_fecha_desde.grid(row=1, column=1, padx=5, pady=5)
+        # Frame para fechas
+        date_frame = ttk.Frame(filter_frame)
+        date_frame.grid(row=2, column=0, columnspan=4, pady=5)
 
-        # Vincular el evento de Enter a la función de filtrado
-        self.entry_fecha_desde.bind("<Return>", self.filtrar_transacciones)
+        ttk.Label(date_frame, text="Desde:").pack(side='left', padx=5)
+        self.entry_fecha_desde = DateEntry(date_frame, width=12, background='darkblue',
+                                         foreground='white', borderwidth=2,
+                                         date_pattern='yyyy-mm-dd')
+        self.entry_fecha_desde.pack(side='left', padx=5)
 
-        ttk.Label(frame_filtro, text="Hasta:").grid(row=1, column=2, padx=5, pady=5)
-        self.entry_fecha_hasta = DateEntry(frame_filtro, width=10, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-        self.entry_fecha_hasta.grid(row=1, column=3, padx=5, pady=5)
+        ttk.Label(date_frame, text="Hasta:").pack(side='left', padx=5)
+        self.entry_fecha_hasta = DateEntry(date_frame, width=12, background='darkblue',
+                                         foreground='white', borderwidth=2,
+                                         date_pattern='yyyy-mm-dd')
+        self.entry_fecha_hasta.pack(side='left', padx=5)
 
-        # Vincular el evento de Enter a la función de filtrado
-        self.entry_fecha_hasta.bind("<Return>", self.filtrar_transacciones)
+        # Botón de filtrar
+        ttk.Button(filter_frame, text="Aplicar Filtros", 
+                   command=self.filtrar_transacciones,
+                   style='Custom.TButton').grid(row=3, column=0, columnspan=4, pady=10)
 
-        # Filtro por artículo
-        ttk.Label(frame_filtro, text="Artículo:").grid(row=0, column=3, padx=5, pady=5)
-        self.combo_articulo = ttk.Combobox(frame_filtro)
-        self.combo_articulo.grid(row=0, column=4, padx=5, pady=5)
+        # TreeView con estilo mejorado
+        style.configure("Treeview", background="#ffffff",
+                       foreground="black",
+                       rowheight=25,
+                       fieldbackground="#ffffff")
+        style.configure("Treeview.Heading", font=('Helvetica', 10, 'bold'))
 
-        # Llenar el combobox con artículos únicos
-        self.cargar_articulos_unicos()
+        # Frame para el TreeView
+        tree_frame = ttk.Frame(main_frame)
+        tree_frame.pack(fill='both', expand=True, pady=5)
 
-        # Vincular el evento de Enter a la función de filtrado
-        self.combo_articulo.bind("<Return>", self.filtrar_transacciones)
-
-        # Botón para filtrar
-        ttk.Button(frame_filtro, text="Filtrar", command=self.filtrar_transacciones).grid(row=2, columnspan=5, pady=10)
-
-        # Crear TreeView para mostrar transacciones
-        self.tree_transacciones = ttk.Treeview(self.tab_transacciones, columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Stock sin Transacción', 'Stock con Transacción', 'Fecha'), show='headings')
-        self.tree_transacciones.pack(fill='both', expand=True, padx=5, pady=5)
+        # Crear TreeView
+        self.tree_transacciones = ttk.Treeview(tree_frame, 
+            columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Stock sin Transacción', 
+                    'Stock con Transacción', 'Fecha'),
+            show='headings',
+            style="Treeview")
 
         # Configurar columnas
         for col in self.tree_transacciones['columns']:
@@ -330,11 +377,14 @@ class Aplicacion:
             self.tree_transacciones.column(col, width=100)
 
         # Agregar scrollbar
-        scrollbar = ttk.Scrollbar(self.tab_transacciones, orient='vertical', command=self.tree_transacciones.yview)
+        scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', 
+                                 command=self.tree_transacciones.yview)
         scrollbar.pack(side='right', fill='y')
         self.tree_transacciones.configure(yscrollcommand=scrollbar.set)
+        self.tree_transacciones.pack(fill='both', expand=True)
 
         # Cargar datos iniciales
+        self.cargar_articulos_unicos()
         self.actualizar_lista_transacciones()
 
     def cargar_articulos_unicos(self):
@@ -838,6 +888,20 @@ class Aplicacion:
         valores = item['values']
         ventana = tk.Toplevel()
         VentanaFechaEntrega(ventana, self, valores[0])  # Pasar el ID de la persona
+
+    def mostrar_todas_transacciones(self):
+        """Muestra todas las transacciones sin filtros"""
+        self.combo_tipo.set('')
+        self.combo_articulo.set('')
+        self.filtrar_fecha_var.set(True)
+        self.actualizar_lista_transacciones()
+
+    def filtrar_por_tipo(self, tipo):
+        """Filtra las transacciones por tipo (entrada/salida)"""
+        self.combo_tipo.set(tipo)
+        self.combo_articulo.set('')
+        self.filtrar_fecha_var.set(True)
+        self.filtrar_transacciones()
 
 class VentanaTransacciones:
     def __init__(self, master, app, db):
