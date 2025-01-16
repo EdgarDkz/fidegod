@@ -989,54 +989,91 @@ class VentanaAgregarPersona:
         self.master = master
         self.app = app
         self.master.title("Agregar Persona")
-        self.master.geometry("300x400")
+        self.master.geometry("400x600")  # Aumentar la altura para acomodar todos los elementos
+        self.master.minsize(400, 600)  # Establecer un tamaño mínimo
 
-        # Crear un marco para el diseño
-        frame = ttk.Frame(master, padding="10")
-        frame.pack(fill='both', expand=True)
+        # Configurar el estilo
+        style = ttk.Style()
+        style.configure('Custom.TFrame', background='#f0f0f0', padding=15)
+        style.configure('Header.TLabel', font=('Helvetica', 12, 'bold'))
+        style.configure('Field.TLabel', font=('Helvetica', 10))
+        style.configure('Custom.TButton', font=('Helvetica', 10), padding=10)
 
-        # Campos para ingresar datos
-        ttk.Label(frame, text="Nombre:").grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_nombre = ttk.Entry(frame)
-        self.entry_nombre.grid(row=0, column=1, padx=5, pady=5)
+        # Marco principal con padding y color de fondo
+        main_frame = ttk.Frame(master, style='Custom.TFrame')
+        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(frame, text="Artículo:").grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_articulo = ttk.Entry(frame)
-        self.entry_articulo.grid(row=1, column=1, padx=5, pady=5)
+        # Título de la ventana
+        ttk.Label(main_frame, text="Registro de Nueva Persona", style='Header.TLabel').pack(pady=(0, 20))
 
-        ttk.Label(frame, text="Teléfono:").grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_telefono = ttk.Entry(frame)
-        self.entry_telefono.grid(row=2, column=1, padx=5, pady=5)
+        # Marco para los campos del formulario
+        form_frame = ttk.LabelFrame(main_frame, text="Datos Personales", padding=15)
+        form_frame.pack(fill='x', padx=10)
 
-        ttk.Label(frame, text="Dirección:").grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_direccion = ttk.Entry(frame)
-        self.entry_direccion.grid(row=3, column=1, padx=5, pady=5)
+        # Campos del formulario con mejor espaciado y alineación
+        campos = [
+            ('Nombre:', 'entry_nombre'),
+            ('Artículo:', 'entry_articulo'),
+            ('Teléfono:', 'entry_telefono'),
+            ('Dirección:', 'entry_direccion'),
+            ('Municipio:', 'combobox_municipio')
+        ]
 
-        ttk.Label(frame, text="Municipio:").grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
-        self.combobox_municipio = ttk.Combobox(frame, values=self.app.municipios)
-        self.combobox_municipio.grid(row=4, column=1, padx=5, pady=5)
+        for i, (label, campo) in enumerate(campos):
+            frame = ttk.Frame(form_frame)
+            frame.pack(fill='x', pady=5)
+            
+            ttk.Label(frame, text=label, style='Field.TLabel', width=15).pack(side='left')
+            
+            if campo == 'combobox_municipio':
+                widget = ttk.Combobox(frame, values=self.app.municipios, width=30)
+            else:
+                widget = ttk.Entry(frame, width=32)
+            widget.pack(side='left', padx=(10, 0))
+            setattr(self, campo, widget)
 
-        ttk.Label(frame, text="Fecha Petición:").grid(row=5, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_fecha_peticion = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-        self.entry_fecha_peticion.grid(row=5, column=1, padx=5, pady=5)
+        # Marco para las fechas
+        dates_frame = ttk.LabelFrame(main_frame, text="Fechas", padding=15)
+        dates_frame.pack(fill='x', padx=10, pady=15)
 
-        ttk.Label(frame, text="Fecha Entrega:").grid(row=6, column=0, padx=5, pady=5, sticky=tk.W)
-        self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-        self.entry_fecha_entrega.grid(row=6, column=1, padx=5, pady=5)
+        # Campo de fecha de petición
+        fecha_pet_frame = ttk.Frame(dates_frame)
+        fecha_pet_frame.pack(fill='x', pady=5)
+        ttk.Label(fecha_pet_frame, text="Fecha Petición:", style='Field.TLabel', width=15).pack(side='left')
+        self.entry_fecha_peticion = DateEntry(fecha_pet_frame, width=30,
+                                            background='darkblue',
+                                            foreground='white',
+                                            borderwidth=2,
+                                            date_pattern='yyyy-mm-dd')
+        self.entry_fecha_peticion.pack(side='left', padx=(10, 0))
+
+        # Campo de fecha de entrega
+        fecha_ent_frame = ttk.Frame(dates_frame)
+        fecha_ent_frame.pack(fill='x', pady=5)
+        ttk.Label(fecha_ent_frame, text="Fecha Entrega:", style='Field.TLabel', width=15).pack(side='left')
+        self.entry_fecha_entrega = DateEntry(fecha_ent_frame, width=30,
+                                           background='darkblue',
+                                           foreground='white',
+                                           borderwidth=2,
+                                           date_pattern='yyyy-mm-dd')
+        self.entry_fecha_entrega.pack(side='left', padx=(10, 0))
 
         # Checkbutton para marcar la fecha de entrega como pendiente
         self.check_pendiente = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Fecha de Entrega Pendiente", variable=self.check_pendiente, command=self.toggle_fecha_entrega).grid(row=7, columnspan=2, pady=5)
+        ttk.Checkbutton(dates_frame, text="Fecha de Entrega Pendiente", 
+                       variable=self.check_pendiente).pack(pady=10)
 
-        # Botón para agregar persona
-        ttk.Button(frame, text="Agregar", command=self.agregar_persona).grid(row=8, columnspan=2, pady=10)
+        # Marco para botones
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=20)
 
-    def toggle_fecha_entrega(self):
-        if self.check_pendiente.get():
-            self.entry_fecha_entrega.config(state='disabled')  # Deshabilitar el campo
-            self.entry_fecha_entrega.delete(0, tk.END)  # Limpiar el campo
-        else:
-            self.entry_fecha_entrega.config(state='normal')  # Habilitar el campo
+        # Botones con mejor estilo y espaciado
+        ttk.Button(button_frame, text="Agregar", 
+                  style='Custom.TButton',
+                  command=self.agregar_persona).pack(side='left', padx=10, expand=True)
+        ttk.Button(button_frame, text="Cancelar", 
+                  style='Custom.TButton',
+                  command=self.master.destroy).pack(side='right', padx=10, expand=True)
 
     def agregar_persona(self):
         nombre = self.entry_nombre.get()
