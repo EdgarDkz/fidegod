@@ -50,7 +50,7 @@ class Aplicacion:
         
         # Botón para eliminar persona
         ttk.Button(frame_botones, text="Eliminar Persona", 
-                command=self.eliminar_persona).grid(row=0, column=7, padx=5)
+                command=self.eliminar_persona).grid(row=0, column=3, padx=5)
         
         # Ocultar detalles de persona
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
@@ -135,17 +135,23 @@ class Aplicacion:
         ttk.Label(frame_busqueda, text="Buscar por Nombre:").pack(side='left', padx=5)
         self.combobox_nombre = ttk.Combobox(frame_busqueda)
         self.combobox_nombre.pack(side='left', padx=5)
-        self.combobox_nombre.bind("<<ComboboxSelected>>", self.buscar_personas)
+
+        # Vincular el evento de Enter a la función de búsqueda
+        self.combobox_nombre.bind("<Return>", self.buscar_personas)
 
         ttk.Label(frame_busqueda, text="Buscar por Artículo:").pack(side='left', padx=5)
         self.combobox_articulo = ttk.Combobox(frame_busqueda)
         self.combobox_articulo.pack(side='left', padx=5)
-        self.combobox_articulo.bind("<<ComboboxSelected>>", self.buscar_personas)
+
+        # Vincular el evento de Enter a la función de búsqueda
+        self.combobox_articulo.bind("<Return>", self.buscar_personas)
 
         ttk.Label(frame_busqueda, text="Buscar por Municipio:").pack(side='left', padx=5)
         self.combobox_municipio = ttk.Combobox(frame_busqueda, values=self.municipios)
         self.combobox_municipio.pack(side='left', padx=5)
-        self.combobox_municipio.bind("<<ComboboxSelected>>", self.buscar_personas)
+
+        # Vincular el evento de Enter a la función de búsqueda
+        self.combobox_municipio.bind("<Return>", self.buscar_personas)
 
         # Botón para buscar
         ttk.Button(frame_busqueda, text="Buscar", command=self.buscar_personas).pack(side='left', padx=5)
@@ -175,8 +181,12 @@ class Aplicacion:
         ttk.Label(frame_busqueda, text="Buscar:").pack(side='left', padx=5)
         self.entry_busqueda_inventario = ttk.Entry(frame_busqueda)
         self.entry_busqueda_inventario.pack(side='left', padx=5)
+
+        # Vincular el evento de Enter a la función de búsqueda
+        self.entry_busqueda_inventario.bind("<Return>", self.buscar_articulos)
+
         ttk.Button(frame_busqueda, text="Buscar", 
-                command=self.buscar_articulos).pack(side='left', padx=5)
+                   command=self.buscar_articulos).pack(side='left', padx=5)
         
         # Botón para agregar producto
         ttk.Button(frame_busqueda, text="Agregar Producto", command=self.abrir_ventana_agregar_producto).pack(side='left', padx=5)
@@ -274,6 +284,9 @@ class Aplicacion:
         self.combo_tipo = ttk.Combobox(frame_filtro, values=["entrada", "salida"])
         self.combo_tipo.grid(row=0, column=1, padx=5, pady=5)
 
+        # Vincular el evento de Enter a la función de filtrado
+        self.combo_tipo.bind("<Return>", self.filtrar_transacciones)
+
         # Checkbox para activar/desactivar filtrado por fecha
         self.filtrar_fecha_var = tk.BooleanVar()
         ttk.Checkbutton(frame_filtro, text="Todas las fechas", variable=self.filtrar_fecha_var, command=self.toggle_fecha).grid(row=0, column=2, padx=5, pady=5)
@@ -283,15 +296,23 @@ class Aplicacion:
         self.entry_fecha_desde = DateEntry(frame_filtro, width=10, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
         self.entry_fecha_desde.grid(row=1, column=1, padx=5, pady=5)
 
+        # Vincular el evento de Enter a la función de filtrado
+        self.entry_fecha_desde.bind("<Return>", self.filtrar_transacciones)
+
         ttk.Label(frame_filtro, text="Hasta:").grid(row=1, column=2, padx=5, pady=5)
         self.entry_fecha_hasta = DateEntry(frame_filtro, width=10, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
         self.entry_fecha_hasta.grid(row=1, column=3, padx=5, pady=5)
+
+        # Vincular el evento de Enter a la función de filtrado
+        self.entry_fecha_hasta.bind("<Return>", self.filtrar_transacciones)
 
         # Filtro por artículo
         ttk.Label(frame_filtro, text="Artículo:").grid(row=0, column=3, padx=5, pady=5)
         self.combo_articulo = ttk.Combobox(frame_filtro)
         self.combo_articulo.grid(row=0, column=4, padx=5, pady=5)
-        self.cargar_articulos()  # Método para cargar artículos en el combobox
+
+        # Vincular el evento de Enter a la función de filtrado
+        self.combo_articulo.bind("<Return>", self.filtrar_transacciones)
 
         # Botón para filtrar
         ttk.Button(frame_filtro, text="Filtrar", command=self.filtrar_transacciones).grid(row=2, columnspan=5, pady=10)
@@ -324,11 +345,7 @@ class Aplicacion:
             self.entry_fecha_desde.config(state='normal')
             self.entry_fecha_hasta.config(state='normal')
 
-    def cargar_articulos(self):
-        articulos = self.db.obtener_inventario()  # Obtener artículos de la base de datos
-        self.combo_articulo['values'] = [articulo[1] for articulo in articulos]  # Suponiendo que el nombre del artículo está en la segunda columna
-
-    def filtrar_transacciones(self):
+    def filtrar_transacciones(self, event=None):
         tipo = self.combo_tipo.get()
         fecha_desde = self.entry_fecha_desde.get()
         fecha_hasta = self.entry_fecha_hasta.get()
@@ -660,7 +677,7 @@ class Aplicacion:
             else:
                 self.campos_inventario['fecha_ingreso'].set_date(valores[5])  # Si ya es un objeto datetime
 
-    def buscar_articulos(self):
+    def buscar_articulos(self, event=None):
         filtro = self.entry_busqueda_inventario.get()
         for item in self.tree_inventario.get_children():
             self.tree_inventario.delete(item)
