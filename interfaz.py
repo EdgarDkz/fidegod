@@ -49,25 +49,44 @@ class Aplicacion:
         frame_botones = ttk.Frame(self.tab_personas)
         frame_botones.pack(pady=10)
 
+        # Configurar estilos personalizados para los botones
+        style = ttk.Style()
+        style.configure('Add.TButton', 
+                       background='#4CAF50',  # Verde
+                       foreground='white',
+                       padding=10)
+        style.configure('Edit.TButton', 
+                       background='#007BFF',  # Azul
+                       foreground='white',
+                       padding=10)
+        style.configure('Date.TButton', 
+                       background='#FFC107',  # Amarillo
+                       foreground='black',
+                       padding=10)
+        style.configure('Delete.TButton', 
+                       background='#DC3545',  # Rojo
+                       foreground='white',
+                       padding=10)
+
         # Botón para agregar persona
         ttk.Button(frame_botones, text="Agregar Persona", 
                    command=self.abrir_ventana_agregar_persona,
-                   style='Accent.TButton').grid(row=0, column=0, padx=5)
+                   style='Add.TButton').grid(row=0, column=0, padx=15, pady=5)
 
         # Botón para editar persona
         ttk.Button(frame_botones, text="Editar Persona", 
                    command=self.abrir_ventana_editar_persona,
-                   style='Accent.TButton').grid(row=0, column=1, padx=5)
+                   style='Edit.TButton').grid(row=0, column=1, padx=15, pady=5)
         
         # Botón para establecer fecha de entrega
         ttk.Button(frame_botones, text="Establecer Fecha de Entrega", 
                    command=self.abrir_ventana_fecha_entrega,
-                   style='Accent.TButton').grid(row=0, column=2, padx=5)
+                   style='Date.TButton').grid(row=0, column=2, padx=15, pady=5)
         
-        # Botón para eliminar persona
+        # Botón para eliminar persona (separado con más padding)
         ttk.Button(frame_botones, text="Eliminar Persona", 
                    command=self.eliminar_persona,
-                   style='Danger.TButton').grid(row=0, column=3, padx=5)
+                   style='Delete.TButton').grid(row=0, column=3, padx=(30, 15), pady=5, sticky='e')
         
         # Ocultar detalles de persona
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
@@ -134,11 +153,16 @@ class Aplicacion:
                 command=self.agregar_persona).pack(side='left', padx=5)
         ttk.Button(frame_botones, text="Actualizar", 
                 command=self.actualizar_persona).pack(side='left', padx=5)
-        ttk.Button(frame_botones, text="Eliminar", 
-                command=self.eliminar_persona).pack(side='left', padx=5)
         ttk.Button(frame_botones, text="Limpiar", 
                 command=self.limpiar_campos_persona).pack(side='left', padx=5)
 
+        # Nuevo marco para el botón de eliminar
+        frame_boton_eliminar = ttk.Frame(self.frame_formulario)
+        frame_boton_eliminar.grid(row=len(campos_normales) + len(campos_fecha) + 2, column=0, columnspan=2, pady=10)
+
+        ttk.Button(frame_boton_eliminar, text="Eliminar", 
+                command=self.eliminar_persona).pack(side='left', padx=5)
+        
         # Bind para selección en el TreeView
         self.tree_personas.bind('<<TreeviewSelect>>', self.seleccionar_persona)
         
@@ -928,8 +952,8 @@ class Aplicacion:
 
     def filtrar_personas(self, event=None):
         # Obtener valores de búsqueda
-        nombre = self.combobox_nombre.get()
-        articulo = self.entry_buscar_articulo.get()
+        nombre = self.combobox_nombre.get().lower()  # Convertir a minúsculas
+        articulo = self.entry_buscar_articulo.get().lower()  # Convertir a minúsculas
         municipio = self.combo_buscar_municipio.get()
         estado = self.combo_estado.get()
 
@@ -943,8 +967,8 @@ class Aplicacion:
         # Filtrar personas
         for persona in personas:
             # Convertir valores a minúsculas para comparación
-            nombre_persona = str(persona[1]).lower()
-            articulo_persona = str(persona[2]).lower()
+            nombre_persona = str(persona[1]).lower()  # Convertir a minúsculas
+            articulo_persona = str(persona[2]).lower()  # Convertir a minúsculas
             municipio_persona = str(persona[5])
             fecha_entrega = persona[7]
 
@@ -953,9 +977,9 @@ class Aplicacion:
 
             # Aplicar filtros
             mostrar = True
-            if nombre and nombre not in nombre_persona:
+            if nombre and not nombre_persona.startswith(nombre):  # Cambiado a startswith
                 mostrar = False
-            if articulo and articulo not in articulo_persona:
+            if articulo and articulo and not articulo_persona.startswith(articulo):  # Cambiado a startswith
                 mostrar = False
             if municipio and municipio != municipio_persona:
                 mostrar = False
@@ -1393,9 +1417,13 @@ class VentanaFechaEntrega:
         self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
         self.entry_fecha_entrega.grid(row=0, column=1, padx=5, pady=5)
 
+        # Estilo para el botón de cancelar
+        style = ttk.Style()
+        style.configure('Red.TButton', background='#FF6F61', foreground='white')  # Rojo pastel
+
         # Botones para confirmar y cancelar
         ttk.Button(frame, text="Confirmar Entrega", command=self.confirmar_entrega, style='Accent.TButton').grid(row=1, column=0, pady=10)
-        ttk.Button(frame, text="Cancelar", command=self.master.destroy, style='Accent.TButton').grid(row=1, column=1, pady=10)
+        ttk.Button(frame, text="Cancelar", command=self.master.destroy, style='Red.TButton').grid(row=1, column=1, pady=10)
 
     def confirmar_entrega(self):
         fecha_entrega = self.entry_fecha_entrega.get()
