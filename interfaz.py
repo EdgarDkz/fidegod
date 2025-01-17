@@ -51,19 +51,23 @@ class Aplicacion:
 
         # Botón para agregar persona
         ttk.Button(frame_botones, text="Agregar Persona", 
-                command=self.abrir_ventana_agregar_persona).grid(row=0, column=0, padx=5)
+                   command=self.abrir_ventana_agregar_persona,
+                   style='Accent.TButton').grid(row=0, column=0, padx=5)
 
         # Botón para editar persona
         ttk.Button(frame_botones, text="Editar Persona", 
-                command=self.abrir_ventana_editar_persona).grid(row=0, column=1, padx=5)
+                   command=self.abrir_ventana_editar_persona,
+                   style='Accent.TButton').grid(row=0, column=1, padx=5)
         
         # Botón para establecer fecha de entrega
         ttk.Button(frame_botones, text="Establecer Fecha de Entrega", 
-                command=self.abrir_ventana_fecha_entrega).grid(row=0, column=2, padx=5)
+                   command=self.abrir_ventana_fecha_entrega,
+                   style='Accent.TButton').grid(row=0, column=2, padx=5)
         
         # Botón para eliminar persona
         ttk.Button(frame_botones, text="Eliminar Persona", 
-                command=self.eliminar_persona).grid(row=0, column=3, padx=5)
+                   command=self.eliminar_persona,
+                   style='Danger.TButton').grid(row=0, column=3, padx=5)
         
         # Ocultar detalles de persona
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
@@ -184,6 +188,11 @@ class Aplicacion:
         # Frame para los filtros de búsqueda
         frame_busqueda = ttk.Frame(self.tab_personas)
         frame_busqueda.pack(fill='x', padx=5, pady=5)
+
+        # Configurar estilos personalizados
+        style = ttk.Style()
+        style.configure('Accent.TButton', font=('Helvetica', 10), padding=5, background='#4CAF50', foreground='white')
+        style.configure('Danger.TButton', font=('Helvetica', 10), padding=5, background='#f44336', foreground='white')
 
     def cargar_nombres_y_articulos(self):
         # Obtener nombres y artículos de la base de datos
@@ -1376,17 +1385,17 @@ class VentanaFechaEntrega:
         self.master.geometry("300x200")
 
         # Crear un marco para el diseño
-        frame = ttk.Frame(master, padding="10")
+        frame = ttk.Frame(master, padding="20")
         frame.pack(fill='both', expand=True)
 
         # Campo para seleccionar la fecha
-        ttk.Label(frame, text="Fecha de Entrega:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(frame, text="Fecha de Entrega:", font=('Helvetica', 12, 'bold')).grid(row=0, column=0, padx=5, pady=5)
         self.entry_fecha_entrega = DateEntry(frame, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
         self.entry_fecha_entrega.grid(row=0, column=1, padx=5, pady=5)
 
         # Botones para confirmar y cancelar
-        ttk.Button(frame, text="Confirmar Entrega", command=self.confirmar_entrega).grid(row=1, column=0, pady=10)
-        ttk.Button(frame, text="Cancelar", command=self.master.destroy).grid(row=1, column=1, pady=10)
+        ttk.Button(frame, text="Confirmar Entrega", command=self.confirmar_entrega, style='Accent.TButton').grid(row=1, column=0, pady=10)
+        ttk.Button(frame, text="Cancelar", command=self.master.destroy, style='Accent.TButton').grid(row=1, column=1, pady=10)
 
     def confirmar_entrega(self):
         fecha_entrega = self.entry_fecha_entrega.get()
