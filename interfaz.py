@@ -188,9 +188,9 @@ class Aplicacion:
         self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
 
         ttk.Label(frame_busqueda, text="Buscar por Municipio:").pack(side='left', padx=5)
-        self.combo_buscar_municipio = ttk.Combobox(frame_busqueda, values=[''] + self.municipios)
-        self.combo_buscar_municipio.pack(side='left', padx=5)
-        self.combo_buscar_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
+        self.combobox_municipio = ttk.Combobox(frame_busqueda, values=[''] + self.municipios)
+        self.combobox_municipio.pack(side='left', padx=5)
+        self.combobox_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Nuevo filtro de estado
         ttk.Label(frame_busqueda, text="Estado:").pack(side='left', padx=5)
@@ -1014,7 +1014,7 @@ class Aplicacion:
         # Obtener valores de búsqueda
         nombre = self.combobox_nombre.get().lower()  # Convertir a minúsculas
         articulo = self.entry_buscar_articulo.get().lower()  # Convertir a minúsculas
-        municipio = self.combobox_municipio.get()
+        municipio = self.combobox_municipio.get()  # Asegúrate de que esto esté definido
         estado = self.combo_estado.get()
 
         # Limpiar TreeView
@@ -1129,12 +1129,13 @@ class VentanaTransacciones:
             messagebox.showwarning("Advertencia", "Seleccione un artículo válido.")
 
 class VentanaAgregarPersona:
-    def __init__(self, master, app):
+    def __init__(self, master, app, persona=None):
         self.master = master
         self.app = app
-        self.master.title("Agregar Persona")
-        self.master.geometry("400x600")  # Aumentar la altura para acomodar todos los elementos
-        self.master.minsize(400, 600)  # Establecer un tamaño mínimo
+        self.persona = persona  # Almacenar la persona si se está editando
+        self.master.title("Agregar Persona" if persona is None else "Editar Persona")
+        self.master.geometry("400x600")
+        self.master.minsize(400, 600)
 
         # Configurar el estilo
         style = ttk.Style()
@@ -1213,13 +1214,38 @@ class VentanaAgregarPersona:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=20)
 
-        # Botones con mejor estilo y espaciado
-        ttk.Button(button_frame, text="Agregar", 
-                  style='Custom.TButton',
-                  command=self.agregar_persona).pack(side='left', padx=10, expand=True)
+        if self.persona:  # Si hay una persona, mostrar el botón de actualizar
+            ttk.Button(button_frame, text="Actualizar", 
+                      style='Custom.TButton',
+                      command=self.actualizar_persona).pack(side='left', padx=10, expand=True)
+        else:  # Si no, mostrar el botón de agregar
+            ttk.Button(button_frame, text="Agregar", 
+                      style='Custom.TButton',
+                      command=self.agregar_persona).pack(side='left', padx=10, expand=True)
+
         ttk.Button(button_frame, text="Cancelar", 
                   style='Custom.TButton',
                   command=self.master.destroy).pack(side='right', padx=10, expand=True)
+
+        if self.persona:  # Si se está editando, cargar los valores
+            self.cargar_valores(self.persona)
+
+    def cargar_valores(self, persona):
+        # Cargar los valores de la persona en los campos
+        self.entry_nombre.insert(0, persona[1])
+        self.entry_articulo.insert(0, persona[2])
+        self.entry_telefono.insert(0, persona[3])
+        self.entry_direccion.insert(0, persona[4])
+        self.combobox_municipio.set(persona[5])
+        self.entry_fecha_peticion.set_date(persona[6])
+        
+        if persona[7] and persona[7] not in ['None', '', 'Pendiente']:
+            self.entry_fecha_entrega.set_date(persona[7])
+            self.check_pendiente.set(False)
+            self.entry_fecha_entrega.config(state='normal')
+        else:
+            self.check_pendiente.set(True)
+            self.entry_fecha_entrega.config(state='disabled')
 
     def agregar_persona(self):
         nombre = self.entry_nombre.get()
@@ -1248,6 +1274,42 @@ class VentanaAgregarPersona:
             self.app.actualizar_lista_personas()  # Actualizar la lista de personas
         else:
             messagebox.showerror("Error", "No se pudo agregar la persona. Verifique los datos.")
+
+    def actualizar_persona(self):
+        # Recoger los datos de los campos de entrada
+        nombre = self.entry_nombre.get()
+        articulo = self.entry_articulo.get()
+        telefono = self.entry_telefono.get()
+        direccion = self.entry_direccion.get()
+        municipio = self.combobox_municipio.get()
+        fecha_peticion = self.entry_fecha_peticion.get()
+        fecha_entrega = self.entry_fecha_entrega.get() if not self.check_pendiente.get() else None
+
+        # Crear un diccionario con los valores
+        valores = {
+            'nombre': nombre,
+            'articulo': articulo,
+            'telefono': telefono,
+            'direccion': direccion,
+            'municipio': municipio,
+            'fecha_peticion': fecha_peticion,
+            'fecha_entrega': fecha_entrega
+        }
+
+        # Llamar al método para actualizar la persona
+        if self.app.db.actualizar_persona(self.persona[0], **valores):  # Usar el ID de la persona
+            messagebox.showinfo("Éxito", "Persona actualizada correctamente")
+            self.master.destroy()  # Cerrar la ventana
+            self.app.actualizar_lista_personas()  # Actualizar la lista de personas
+        else:
+            messagebox.showerror("Error", "No se pudo actualizar la persona. Verifique los datos.")
+
+    def toggle_fecha_estado(self):
+        """Controla la visibilidad y estado del campo de fecha"""
+        if self.check_pendiente.get():
+            self.entry_fecha_entrega.config(state='disabled')
+        else:
+            self.entry_fecha_entrega.config(state='normal')
 
 class VentanaAgregarProducto:
     def __init__(self, master, app):
@@ -1418,23 +1480,6 @@ class VentanaEditarPersona:
 
         # Asignar valores iniciales a los campos
         self.cargar_valores(valores)
-
-    def cargar_valores(self, valores):
-        self.entry_nombre.insert(0, valores[0])
-        self.entry_articulo.insert(0, valores[1])
-        self.entry_telefono.insert(0, valores[2])
-        self.entry_direccion.insert(0, valores[3])
-        self.combobox_municipio.set(valores[4])
-        self.entry_fecha_peticion.set_date(valores[5])
-        
-        # Configurar la fecha de entrega
-        if valores[6] and valores[6] not in ['None', '', 'Pendiente']:
-            self.entry_fecha_entrega.set_date(valores[6])
-            self.check_pendiente.set(False)
-            self.entry_fecha_entrega.config(state='normal')
-        else:
-            self.check_pendiente.set(True)
-            self.entry_fecha_entrega.config(state='disabled')
 
     def toggle_fecha_estado(self):
         """Controla la visibilidad y estado del campo de fecha"""
