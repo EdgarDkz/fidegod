@@ -252,20 +252,16 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def actualizar_articulo(self, id_articulo, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
+    def actualizar_articulo(self, id_articulo, imagen):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             
             cursor.execute('''
                 UPDATE inventario 
-                SET nombre_articulo = ?, 
-                    descripcion = ?, 
-                    cantidad_disponible = ?, 
-                    imagen = ?, 
-                    fecha_ingreso = ?
+                SET imagen = ? 
                 WHERE id = ?
-            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso, id_articulo))
+            ''', (imagen, id_articulo))  # Solo actualiza la imagen
             
             conexion.commit()
             return True
@@ -450,5 +446,25 @@ class GestionDB:
             cursor = conexion.cursor()
             cursor.execute('SELECT * FROM personas WHERE id=?', (id,))
             return cursor.fetchone()  # Esto devolverá una tupla con todos los datos de la persona
+        finally:
+            conexion.close()
+
+    def actualizar_imagen_articulo(self, id_articulo, imagen):
+        """Actualiza solo la imagen de un artículo"""
+        try:
+            conexion = sqlite3.connect(self.db_name)
+            cursor = conexion.cursor()
+            
+            cursor.execute('''
+                UPDATE inventario 
+                SET imagen = ?
+                WHERE id = ?
+            ''', (imagen, id_articulo))
+            
+            conexion.commit()
+            return True
+        except Exception as e:
+            print(f"Error al actualizar imagen: {e}")
+            return False
         finally:
             conexion.close()

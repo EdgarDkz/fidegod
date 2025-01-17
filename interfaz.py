@@ -368,21 +368,38 @@ class Aplicacion:
             print("Eliminar artículo:", item['values'])
 
     def seleccionar_imagen(self):
-        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.png")])
-        if file_path:
+        ruta = filedialog.askopenfilename(
+            filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
+        )
+        if ruta:
             try:
-                # Actualiza solo la imagen, manteniendo los otros detalles
-                self.app.db.actualizar_articulo(
-                    id_articulo=self.articulo[0],  # ID del artículo
-                    nombre_articulo=self.campos_articulo['nombre_articulo'].get(),
-                    descripcion=self.campos_articulo['descripcion'].get(),
-                    cantidad_disponible=int(self.campos_articulo['cantidad_disponible'].get()),
-                    imagen=file_path,  # Ruta de la nueva imagen
-                    fecha_ingreso=self.campos_articulo['fecha_ingreso'].get()
-                )
-                messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
+                # Obtener el artículo seleccionado
+                seleccion = self.tree_inventario.selection()
+                if seleccion:
+                    item = self.tree_inventario.item(seleccion[0])
+                    id_articulo = item['values'][0]
+                    
+                    # Guardar la imagen en la carpeta de imágenes
+                    nombre_archivo = f"imagenes/{os.path.basename(ruta)}"
+                    os.makedirs("imagenes", exist_ok=True)
+                    Image.open(ruta).save(nombre_archivo)
+                    
+                    # Mostrar la imagen en el label
+                    imagen = Image.open(ruta)
+                    imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
+                    foto = ImageTk.PhotoImage(imagen)
+                    self.label_imagen.configure(image=foto)
+                    self.label_imagen.image = foto
+                    
+                    # Actualizar solo la imagen en la base de datos
+                    if self.db.actualizar_imagen_articulo(id_articulo, nombre_archivo):
+                        self.actualizar_lista_inventario()
+                        messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
+                    else:
+                        messagebox.showerror("Error", "No se pudo actualizar la imagen")
+                    
             except Exception as e:
-                messagebox.showerror("Error", f"No se pudo actualizar la imagen: {e}")
+                messagebox.showerror("Error", f"Error al actualizar la imagen: {str(e)}")
 
     def setup_transacciones_tab(self):
         # Estilo para los frames
@@ -689,47 +706,6 @@ class Aplicacion:
         if self.tree_personas.selection():
             self.tree_personas.selection_remove(self.tree_personas.selection())
 
-
-    def seleccionar_imagen(self):
-        ruta = filedialog.askopenfilename(
-            filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
-        )
-        if ruta:
-            # Mostrar la imagen en el label
-            imagen = Image.open(ruta)
-            imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
-            foto = ImageTk.PhotoImage(imagen)
-            self.label_imagen.configure(image=foto)
-            self.label_imagen.image = foto  # Mantener referencia
-            
-            # Preguntar si desea guardar la imagen
-            if messagebox.askyesno("Confirmar", "¿Desea guardar esta imagen como foto del artículo?"):
-                self.ruta_imagen = ruta
-                
-                # Obtener el artículo seleccionado
-                seleccion = self.tree_inventario.selection()
-                if seleccion:
-                    item = self.tree_inventario.item(seleccion[0])
-                    id_articulo = item['values'][0]
-                    
-                    # Guardar la imagen en la carpeta de imágenes
-                    nombre_archivo = f"imagenes/{os.path.basename(ruta)}"
-                    os.makedirs("imagenes", exist_ok=True)
-                    Image.open(ruta).save(nombre_archivo)
-                    
-                    # Actualizar solo la imagen en la base de datos
-                    articulo = self.db.obtener_articulo(id_articulo)
-                    if articulo:
-                        self.db.actualizar_articulo(
-                            id=id_articulo,
-                            nombre_articulo=articulo[1],
-                            descripcion=articulo[2],
-                            cantidad_disponible=articulo[3],
-                            imagen=nombre_archivo,
-                            fecha_ingreso=articulo[5]
-                        )
-                        self.actualizar_lista_inventario()
-                        messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
 
     def eliminar_imagen(self):
         try:
