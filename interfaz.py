@@ -12,6 +12,9 @@ class Aplicacion:
         self.root.title("Sistema de Gestión")
         self.root.geometry("1200x700")
         
+        # Inicializar ruta_imagen
+        self.ruta_imagen = None  # Asegúrate de que esta línea esté presente
+
         # Configurar el estilo general
         style = ttk.Style()
         style.theme_use('clam')  # Usar el tema 'clam' que es más moderno
@@ -52,8 +55,8 @@ class Aplicacion:
         # Configurar estilos personalizados para los botones
         style = ttk.Style()
         style.configure('Add.TButton', 
-                       background='#4CAF50',  # Verde
-                       foreground='white',
+                       background='#77dd77',  # Verde pastel
+                       foreground='black',
                        padding=10)
         style.configure('Edit.TButton', 
                        background='#007BFF',  # Azul
@@ -243,7 +246,9 @@ class Aplicacion:
                    command=self.buscar_articulos).pack(side='left', padx=5)
         
         # Botón para agregar producto
-        ttk.Button(frame_busqueda, text="Agregar Producto", command=self.abrir_ventana_agregar_producto).pack(side='left', padx=5)
+        ttk.Button(frame_busqueda, text="Agregar Producto", 
+                   command=self.abrir_ventana_agregar_producto, 
+                   style='Add.TButton').pack(side='left', padx=5)
         
         # Frame principal dividido en dos
         frame_principal = ttk.PanedWindow(self.tab_inventario, orient=tk.HORIZONTAL)
@@ -639,13 +644,41 @@ class Aplicacion:
             filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
         )
         if ruta:
-            self.ruta_imagen = ruta
             # Mostrar la imagen en el label
             imagen = Image.open(ruta)
-            imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)  # Redimensionar
+            imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
             foto = ImageTk.PhotoImage(imagen)
             self.label_imagen.configure(image=foto)
             self.label_imagen.image = foto  # Mantener referencia
+            
+            # Preguntar si desea guardar la imagen
+            if messagebox.askyesno("Confirmar", "¿Desea guardar esta imagen como foto del artículo?"):
+                self.ruta_imagen = ruta
+                
+                # Obtener el artículo seleccionado
+                seleccion = self.tree_inventario.selection()
+                if seleccion:
+                    item = self.tree_inventario.item(seleccion[0])
+                    id_articulo = item['values'][0]
+                    
+                    # Guardar la imagen en la carpeta de imágenes
+                    nombre_archivo = f"imagenes/{os.path.basename(ruta)}"
+                    os.makedirs("imagenes", exist_ok=True)
+                    Image.open(ruta).save(nombre_archivo)
+                    
+                    # Actualizar solo la imagen en la base de datos
+                    articulo = self.db.obtener_articulo(id_articulo)
+                    if articulo:
+                        self.db.actualizar_articulo(
+                            id=id_articulo,
+                            nombre_articulo=articulo[1],
+                            descripcion=articulo[2],
+                            cantidad_disponible=articulo[3],
+                            imagen=nombre_archivo,
+                            fecha_ingreso=articulo[5]
+                        )
+                        self.actualizar_lista_inventario()
+                        messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
 
     def eliminar_imagen(self):
         try:
@@ -817,14 +850,6 @@ class Aplicacion:
             item = self.tree_inventario.item(seleccion[0])
             id_articulo = item['values'][0]
             
-            # Eliminar la imagen si existe
-            articulo = self.db.obtener_articulo(id_articulo)
-            if articulo and articulo[4]:  # Si hay imagen
-                try:
-                    os.remove(articulo[4])
-                except:
-                    pass
-            
             if self.db.eliminar_articulo(id_articulo):
                 messagebox.showinfo("Éxito", "Artículo eliminado correctamente")
                 self.limpiar_campos_inventario()
@@ -849,21 +874,19 @@ class Aplicacion:
             messagebox.showwarning("Error", "La cantidad debe ser un número")
             return
         
-        # Manejar la imagen
-        if self.ruta_imagen:
-            nombre_archivo = f"imagenes/{os.path.basename(self.ruta_imagen)}"
-            os.makedirs("imagenes", exist_ok=True)
-            if self.ruta_imagen != nombre_archivo:
-                Image.open(self.ruta_imagen).save(nombre_archivo)
-            valores['imagen'] = nombre_archivo
-        else:
-            articulo = self.db.obtener_articulo(id_articulo)
-            valores['imagen'] = articulo[4] if articulo else None
+        # Obtener el artículo actual para mantener la imagen existente
+        articulo_actual = self.db.obtener_articulo(id_articulo)
+        imagen_actual = articulo_actual[4] if articulo_actual else None
         
-        # Asegúrate de incluir la fecha de ingreso
-        fecha_ingreso = valores.pop('fecha_ingreso', None)  # Extraer la fecha de ingreso
-
-        if self.db.actualizar_articulo(id_articulo, **valores, fecha_ingreso=fecha_ingreso):
+        # Actualizar solo los datos, manteniendo la imagen existente
+        if self.db.actualizar_articulo(
+            id_articulo,
+            nombre_articulo=valores['nombre_articulo'],
+            descripcion=valores['descripcion'],
+            cantidad_disponible=valores['cantidad_disponible'],
+            imagen=imagen_actual,  # Mantener la imagen existente
+            fecha_ingreso=valores['fecha_ingreso']
+        ):
             messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
             self.limpiar_campos_inventario()
             self.actualizar_lista_inventario()
@@ -1194,27 +1217,53 @@ class VentanaAgregarProducto:
         self.master = master
         self.app = app
         self.master.title("Agregar Producto")
-        self.master.geometry("300x400")
+        self.master.geometry("400x400")  # Ajustar el tamaño de la ventana
 
-        # Campos para ingresar datos
-        ttk.Label(master, text="Nombre del Artículo:").pack(pady=5)
-        self.entry_nombre_articulo = ttk.Entry(master)
-        self.entry_nombre_articulo.pack(pady=5)
+        # Estilo
+        style = ttk.Style()
+        style.configure('Custom.TFrame', background='#f0f0f0', padding=15)
+        style.configure('Header.TLabel', font=('Helvetica', 12, 'bold'))
+        style.configure('Field.TLabel', font=('Helvetica', 10))
+        style.configure('Custom.TButton', font=('Helvetica', 10), padding=10)
 
-        ttk.Label(master, text="Descripción:").pack(pady=5)
-        self.entry_descripcion = ttk.Entry(master)
-        self.entry_descripcion.pack(pady=5)
+        # Marco principal
+        main_frame = ttk.Frame(master, style='Custom.TFrame')
+        main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(master, text="Cantidad Disponible:").pack(pady=5)
-        self.entry_cantidad = ttk.Entry(master)
-        self.entry_cantidad.pack(pady=5)
+        # Título de la ventana
+        ttk.Label(main_frame, text="Agregar Nuevo Producto", style='Header.TLabel').pack(pady=(0, 20))
 
-        ttk.Label(master, text="Fecha de Ingreso:").pack(pady=5)
-        self.entry_fecha_ingreso = DateEntry(master, width=17, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
-        self.entry_fecha_ingreso.pack(pady=5)
+        # Marco para los campos del formulario
+        form_frame = ttk.LabelFrame(main_frame, text="Detalles del Producto", padding=15)
+        form_frame.pack(fill='x', padx=10)
 
-        # Botón para agregar producto
-        ttk.Button(master, text="Agregar", command=self.agregar_producto).pack(pady=10)
+        # Campos del formulario
+        campos = [
+            ('Nombre del Artículo:', 'entry_nombre_articulo'),
+            ('Descripción:', 'entry_descripcion'),
+            ('Cantidad Disponible:', 'entry_cantidad'),
+            ('Fecha de Ingreso:', 'entry_fecha_ingreso')
+        ]
+
+        for label, campo in campos:
+            frame = ttk.Frame(form_frame)
+            frame.pack(fill='x', pady=5)
+
+            ttk.Label(frame, text=label, style='Field.TLabel', width=20).pack(side='left')
+            if campo == 'entry_fecha_ingreso':
+                widget = DateEntry(frame, width=30, background='darkblue', foreground='white', borderwidth=2, date_pattern='yyyy-mm-dd')
+            else:
+                widget = ttk.Entry(frame, width=30)
+            widget.pack(side='left', padx=(10, 0))
+            setattr(self, campo, widget)
+
+        # Marco para botones
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=20)
+
+        # Botones
+        ttk.Button(button_frame, text="Agregar", style='Custom.TButton', command=self.agregar_producto).pack(side='left', padx=10, expand=True)
+        ttk.Button(button_frame, text="Cancelar", style='Custom.TButton', command=self.master.destroy).pack(side='right', padx=10, expand=True)
 
     def agregar_producto(self):
         nombre_articulo = self.entry_nombre_articulo.get()
