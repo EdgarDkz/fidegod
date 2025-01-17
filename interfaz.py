@@ -289,11 +289,11 @@ class Aplicacion:
                 self.campos_inventario[campo] = entry
 
         # Frame para la imagen
-        frame_imagen = ttk.LabelFrame(self.frame_detalles_articulo, text="Imagen del Artículo")
+        frame_imagen = ttk.LabelFrame(self.frame_detalles_articulo, text="Imagen del Artículo", width=150, height=150)
         frame_imagen.grid(row=0, column=2, rowspan=len(campos_normales), padx=5, pady=5)
 
         # Label para mostrar la imagen
-        self.label_imagen = ttk.Label(frame_imagen)
+        self.label_imagen = ttk.Label(frame_imagen, text="No hay imagen", width=20)  # Texto por defecto
         self.label_imagen.pack(padx=5, pady=5)
 
         # Botones para la imagen
@@ -332,6 +332,57 @@ class Aplicacion:
         
         # Cargar datos iniciales
         self.actualizar_lista_inventario()
+
+        # Crear el menú contextual
+        self.menu_contextual = tk.Menu(self.root, tearoff=0)
+        self.menu_contextual.add_command(label="Editar", command=self.editar_articulo)
+        self.menu_contextual.add_command(label="Eliminar", command=self.eliminar_articulo)
+        self.menu_contextual.add_command(label="Cambiar Foto", command=self.seleccionar_imagen)
+
+        # Bind para el clic derecho
+        self.tree_inventario.bind("<Button-3>", self.mostrar_menu_contextual)
+
+    def mostrar_menu_contextual(self, event):
+        """Muestra el menú contextual al hacer clic derecho"""
+        # Obtener la posición del clic
+        self.tree_inventario.selection_set(self.tree_inventario.identify_row(event.y))
+        self.menu_contextual.post(event.x_root, event.y_root)
+
+    def editar_articulo(self):
+        """Abre la ventana de edición para el artículo seleccionado"""
+        seleccion = self.tree_inventario.selection()  # Usar tree_inventario en lugar de tree
+        if seleccion:
+            item = self.tree_inventario.item(seleccion[0])
+            # Obtener los valores del artículo seleccionado
+            valores = item['values']
+            
+            # Crear la ventana de edición
+            edit_window = tk.Toplevel(self.root)  # Usar self.root en lugar de self.master
+            VentanaEditarArticulo(edit_window, self, valores)
+
+    def eliminar_articulo(self):
+        seleccion = self.tree_inventario.selection()
+        if seleccion:
+            item = self.tree_inventario.item(seleccion[0])
+            # Aquí puedes implementar la lógica para eliminar el artículo
+            print("Eliminar artículo:", item['values'])
+
+    def seleccionar_imagen(self):
+        file_path = filedialog.askopenfilename(filetypes=[("Image files", "*.jpg *.png")])
+        if file_path:
+            try:
+                # Actualiza solo la imagen, manteniendo los otros detalles
+                self.app.db.actualizar_articulo(
+                    id_articulo=self.articulo[0],  # ID del artículo
+                    nombre_articulo=self.campos_articulo['nombre_articulo'].get(),
+                    descripcion=self.campos_articulo['descripcion'].get(),
+                    cantidad_disponible=int(self.campos_articulo['cantidad_disponible'].get()),
+                    imagen=file_path,  # Ruta de la nueva imagen
+                    fecha_ingreso=self.campos_articulo['fecha_ingreso'].get()
+                )
+                messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo actualizar la imagen: {e}")
 
     def setup_transacciones_tab(self):
         # Estilo para los frames
@@ -753,30 +804,16 @@ class Aplicacion:
             messagebox.showerror("Error", "No se pudo agregar el artículo")
 
     def actualizar_lista_inventario(self):
-        # Limpiar el TreeView
+        # Limpiar la lista actual
         for item in self.tree_inventario.get_children():
             self.tree_inventario.delete(item)
-        
-        # Obtener y mostrar los artículos
-        articulos = self.db.obtener_inventario()
-        for articulo in articulos:
-            # Preparar la miniatura de la imagen si existe
-            imagen_texto = "🖼️"  # Emoji por defecto para indicar que hay imagen
-            if articulo[4]:  # Si existe la imagen
-                imagen_texto = "Ver"  # Texto para indicar que hay una imagen
-            else:
-                imagen_texto = ""  # Texto si no hay imagen
 
-            # Asegúrate de que el índice para la fecha de ingreso sea correcto
-            valores = (
-                articulo[0],  # ID
-                articulo[1],  # Nombre
-                articulo[2],  # Descripción
-                articulo[3],  # Cantidad
-                imagen_texto,  # Texto para la imagen
-                articulo[5]    # Fecha de Ingreso (asegúrate de que este índice sea correcto)
-            )
-            self.tree_inventario.insert('', 'end', values=valores)
+        # Obtener los artículos de la base de datos
+        articulos = self.db.obtener_articulos()  # Llama al método de GestionDB
+
+        # Agregar los artículos a la lista
+        for articulo in articulos:
+            self.tree_inventario.insert('', 'end', values=articulo)
 
     def seleccionar_articulo(self, event):
         seleccion = self.tree_inventario.selection()
@@ -977,7 +1014,7 @@ class Aplicacion:
         # Obtener valores de búsqueda
         nombre = self.combobox_nombre.get().lower()  # Convertir a minúsculas
         articulo = self.entry_buscar_articulo.get().lower()  # Convertir a minúsculas
-        municipio = self.combo_buscar_municipio.get()
+        municipio = self.combobox_municipio.get()
         estado = self.combo_estado.get()
 
         # Limpiar TreeView
@@ -1484,6 +1521,210 @@ class VentanaFechaEntrega:
             self.app.actualizar_lista_personas()  # Actualizar la lista de personas
         else:
             messagebox.showerror("Error", "No se pudo actualizar la fecha de entrega")
+
+class VentanaEditarArticulo:
+    def __init__(self, master, app, articulo):
+        self.master = master
+        self.app = app
+        self.articulo = articulo
+        
+        # Configurar ventana
+        self.master.title("Editar Artículo")
+        self.master.geometry("600x500")
+        
+        # Estilo personalizado
+        style = ttk.Style()
+        style.configure('Heading.TLabel', font=('Helvetica', 12, 'bold'))
+        style.configure('Custom.TButton', padding=6, font=('Helvetica', 9))
+        style.configure('Danger.TButton', padding=6)
+        style.configure('Success.TButton', padding=6)
+        
+        # Frame principal con padding
+        main_frame = ttk.Frame(master, padding="20")
+        main_frame.pack(fill='both', expand=True)
+        
+        # Título
+        ttk.Label(main_frame, text="Editar Artículo", style='Heading.TLabel').pack(pady=(0, 20))
+        
+        # Frame para el contenido
+        content_frame = ttk.Frame(main_frame)
+        content_frame.pack(fill='both', expand=True)
+        
+        # Frame izquierdo para los campos
+        left_frame = ttk.LabelFrame(content_frame, text="Detalles del Artículo", padding="10")
+        left_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
+        
+        # Campos del formulario
+        self.campos = {}
+        campos_config = [
+            ('Nombre del Artículo:', 'nombre'),
+            ('Descripción:', 'descripcion'),
+            ('Cantidad Disponible:', 'cantidad'),
+            ('Fecha de Ingreso:', 'fecha')
+        ]
+        
+        for i, (label_text, campo_name) in enumerate(campos_config):
+            frame = ttk.Frame(left_frame)
+            frame.pack(fill='x', pady=5)
+            
+            ttk.Label(frame, text=label_text, width=15).pack(side='left')
+            
+            if campo_name == 'fecha':
+                widget = DateEntry(frame, width=25,
+                                 background='darkblue',
+                                 foreground='white',
+                                 borderwidth=2,
+                                 date_pattern='yyyy-mm-dd')
+            else:
+                widget = ttk.Entry(frame, width=25)
+            widget.pack(side='left', padx=5, fill='x', expand=True)
+            self.campos[campo_name] = widget
+        
+        # Frame derecho para la imagen
+        right_frame = ttk.LabelFrame(content_frame, text="Imagen del Artículo", padding="10")
+        right_frame.pack(side='right', fill='both', padx=(10, 0))
+        
+        # Label para la imagen
+        self.image_label = ttk.Label(right_frame, text="No hay imagen")
+        self.image_label.pack(pady=10)
+        
+        # Frame para los botones de imagen
+        image_buttons_frame = ttk.Frame(right_frame)
+        image_buttons_frame.pack(pady=10)
+        
+        # Botones para la imagen
+        ttk.Button(image_buttons_frame, text="Seleccionar Imagen",
+                  command=self.seleccionar_imagen,
+                  style='Custom.TButton').pack(side='left', padx=5)
+        
+        ttk.Button(image_buttons_frame, text="Eliminar Imagen",
+                  command=self.eliminar_imagen,
+                  style='Custom.TButton').pack(side='left', padx=5)
+        
+        # Frame para los botones de acción
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill='x', pady=(20, 0))
+        
+        # Botones de acción
+        ttk.Button(button_frame, text="Actualizar",
+                  command=self.actualizar_articulo,
+                  style='Success.TButton').pack(side='left', padx=5)
+        
+        ttk.Button(button_frame, text="Cancelar",
+                  command=self.master.destroy,
+                  style='Danger.TButton').pack(side='right', padx=5)
+        
+        # Cargar datos del artículo
+        self.cargar_datos_articulo()
+    
+    def cargar_datos_articulo(self):
+        """Carga los datos del artículo en los campos"""
+        self.campos['nombre'].insert(0, self.articulo[1])
+        self.campos['descripcion'].insert(0, self.articulo[2])
+        self.campos['cantidad'].insert(0, str(self.articulo[3]))
+        self.campos['fecha'].set_date(self.articulo[5])
+        
+        # Cargar imagen si existe
+        if self.articulo[4] and self.articulo[4] != 'None':
+            self.mostrar_imagen(self.articulo[4])
+    
+    def actualizar_articulo(self):
+        """Actualiza el artículo con los nuevos datos"""
+        try:
+            # Obtener valores de los campos
+            nombre = self.campos['nombre'].get()
+            descripcion = self.campos['descripcion'].get()
+            cantidad = self.campos['cantidad'].get()
+            fecha = self.campos['fecha'].get()
+            
+            # Validaciones
+            if not nombre or not cantidad:
+                messagebox.showwarning("Advertencia", "Nombre y cantidad son campos obligatorios.")
+                return
+            
+            try:
+                cantidad = int(cantidad)
+            except ValueError:
+                messagebox.showwarning("Error", "La cantidad debe ser un número entero.")
+                return
+            
+            # Actualizar en la base de datos
+            if self.app.db.actualizar_articulo(
+                self.articulo[0],  # ID
+                nombre,
+                descripcion,
+                cantidad,
+                self.articulo[4],  # Imagen actual
+                fecha
+            ):
+                messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
+                self.app.actualizar_lista_inventario()  # Actualizar la lista en la ventana principal
+                self.master.destroy()
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar el artículo")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al actualizar: {str(e)}")
+    
+    def seleccionar_imagen(self):
+        """Permite seleccionar una nueva imagen para el artículo"""
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
+        )
+        
+        if file_path:
+            try:
+                if self.app.db.actualizar_articulo(
+                    self.articulo[0],
+                    self.campos['nombre'].get(),
+                    self.campos['descripcion'].get(),
+                    int(self.campos['cantidad'].get()),
+                    file_path,
+                    self.campos['fecha'].get()
+                ):
+                    messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
+                    self.mostrar_imagen(file_path)
+                    self.articulo = list(self.articulo)
+                    self.articulo[4] = file_path
+                    self.app.actualizar_lista_inventario()
+                else:
+                    messagebox.showerror("Error", "No se pudo actualizar la imagen")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al actualizar la imagen: {str(e)}")
+    
+    def eliminar_imagen(self):
+        """Elimina la imagen del artículo"""
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
+            try:
+                if self.app.db.actualizar_articulo(
+                    self.articulo[0],
+                    self.campos['nombre'].get(),
+                    self.campos['descripcion'].get(),
+                    int(self.campos['cantidad'].get()),
+                    None,
+                    self.campos['fecha'].get()
+                ):
+                    messagebox.showinfo("Éxito", "Imagen eliminada correctamente")
+                    self.image_label.configure(text="No hay imagen")
+                    self.articulo = list(self.articulo)
+                    self.articulo[4] = None
+                    self.app.actualizar_lista_inventario()
+                else:
+                    messagebox.showerror("Error", "No se pudo eliminar la imagen")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al eliminar la imagen: {str(e)}")
+    
+    def mostrar_imagen(self, ruta_imagen):
+        """Muestra la imagen en el label de imagen"""
+        try:
+            imagen = Image.open(ruta_imagen)
+            imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
+            foto = ImageTk.PhotoImage(imagen)
+            self.image_label.configure(image=foto)
+            self.image_label.image = foto
+        except Exception as e:
+            self.image_label.configure(text="Error al cargar la imagen")
+            print(f"Error al cargar la imagen: {str(e)}")
 
 # Para abrir la ventana de transacciones
 def abrir_ventana_transacciones(app, db):

@@ -252,17 +252,20 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def actualizar_articulo(self, id, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
+    def actualizar_articulo(self, id_articulo, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             
-            # Actualizar el artículo, incluyendo la fecha de ingreso
-            cursor.execute(''' 
-            UPDATE inventario 
-            SET nombre_articulo=?, descripcion=?, cantidad_disponible=?, imagen=?, fecha_ingreso=?
-            WHERE id=? 
-            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso, id))
+            cursor.execute('''
+                UPDATE inventario 
+                SET nombre_articulo = ?, 
+                    descripcion = ?, 
+                    cantidad_disponible = ?, 
+                    imagen = ?, 
+                    fecha_ingreso = ?
+                WHERE id = ?
+            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso, id_articulo))
             
             conexion.commit()
             return True
@@ -406,8 +409,8 @@ class GestionDB:
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
-            cursor.execute('SELECT DISTINCT articulo FROM personas')
-            return [row[0] for row in cursor.fetchall()]
+            cursor.execute('SELECT * FROM inventario')
+            return cursor.fetchall()
         finally:
             conexion.close()
 
