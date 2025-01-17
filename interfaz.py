@@ -145,46 +145,54 @@ class Aplicacion:
         frame_busqueda = ttk.Frame(self.tab_personas)
         frame_busqueda.pack(pady=10)
 
+        # Filtros de búsqueda
         ttk.Label(frame_busqueda, text="Buscar por Nombre:").pack(side='left', padx=5)
-        self.combobox_nombre = ttk.Combobox(frame_busqueda)
+        self.combobox_nombre = ttk.Combobox(frame_busqueda)  # Cambiar de Entry a Combobox
         self.combobox_nombre.pack(side='left', padx=5)
-
-        # Vincular el evento de Enter a la función de búsqueda
-        self.combobox_nombre.bind("<Return>", self.buscar_personas)
+        self.combobox_nombre.bind('<Return>', self.filtrar_personas)
 
         ttk.Label(frame_busqueda, text="Buscar por Artículo:").pack(side='left', padx=5)
-        self.combobox_articulo = ttk.Combobox(frame_busqueda)
-        self.combobox_articulo.pack(side='left', padx=5)
-
-        # Vincular el evento de Enter a la función de búsqueda
-        self.combobox_articulo.bind("<Return>", self.buscar_personas)
+        self.entry_buscar_articulo = ttk.Entry(frame_busqueda)  # Asegúrate de que esté definido
+        self.entry_buscar_articulo.pack(side='left', padx=5)
+        self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
 
         ttk.Label(frame_busqueda, text="Buscar por Municipio:").pack(side='left', padx=5)
-        self.combobox_municipio = ttk.Combobox(frame_busqueda, values=self.municipios)
-        self.combobox_municipio.pack(side='left', padx=5)
+        self.combo_buscar_municipio = ttk.Combobox(frame_busqueda, values=[''] + self.municipios)
+        self.combo_buscar_municipio.pack(side='left', padx=5)
+        self.combo_buscar_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
-        # Vincular el evento de Enter a la función de búsqueda
-        self.combobox_municipio.bind("<Return>", self.buscar_personas)
+        # Nuevo filtro de estado
+        ttk.Label(frame_busqueda, text="Estado:").pack(side='left', padx=5)
+        self.combo_estado = ttk.Combobox(frame_busqueda, 
+                                       values=['Todos', 'Entregado', 'Pendiente'],
+                                       width=10)
+        self.combo_estado.set('Todos')
+        self.combo_estado.pack(side='left', padx=5)
+        self.combo_estado.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Botón para buscar
-        ttk.Button(frame_busqueda, text="Buscar", command=self.buscar_personas).pack(side='left', padx=5)
+        ttk.Button(frame_busqueda, text="Buscar", 
+                  command=lambda: self.filtrar_personas(None)).pack(side='left', padx=5)
 
         # Botón para exportar a Excel
-        ttk.Button(frame_busqueda, text="Exportar a Excel", command=self.exportar_a_excel).pack(side='left', padx=5)
+        ttk.Button(frame_busqueda, text="Exportar a Excel", 
+                  command=self.exportar_a_excel).pack(side='left', padx=5)
 
         # Cargar nombres y artículos en los comboboxes
         self.cargar_nombres_y_articulos()
 
-        
+        # Frame para los filtros de búsqueda
+        frame_busqueda = ttk.Frame(self.tab_personas)
+        frame_busqueda.pack(fill='x', padx=5, pady=5)
 
     def cargar_nombres_y_articulos(self):
         # Obtener nombres y artículos de la base de datos
-        nombres = self.db.obtener_nombres()
-        articulos = self.db.obtener_articulos()
+        nombres = self.db.obtener_nombres()  # Asegúrate de que este método exista
+        articulos = self.db.obtener_articulos()  # Asegúrate de que este método exista
 
         # Llenar los comboboxes
         self.combobox_nombre['values'] = nombres
-        self.combobox_articulo['values'] = articulos
+        self.combo_articulo['values'] = articulos  # Asegúrate de usar el nombre correcto
 
     def setup_inventario_tab(self):
         # Frame para búsqueda
@@ -477,7 +485,7 @@ class Aplicacion:
 
     def buscar_personas(self, event=None):
         nombre = self.combobox_nombre.get()
-        articulo = self.combobox_articulo.get()
+        articulo = self.combo_articulo.get()
         municipio = self.combobox_municipio.get()
 
         # Limpiar la lista actual
@@ -908,6 +916,49 @@ class Aplicacion:
         self.combo_articulo.set('')
         self.filtrar_fecha_var.set(True)
         self.filtrar_transacciones()
+
+    def filtrar_personas(self, event=None):
+        # Obtener valores de búsqueda
+        nombre = self.combobox_nombre.get()
+        articulo = self.entry_buscar_articulo.get()
+        municipio = self.combo_buscar_municipio.get()
+        estado = self.combo_estado.get()
+
+        # Limpiar TreeView
+        for item in self.tree_personas.get_children():
+            self.tree_personas.delete(item)
+
+        # Obtener todas las personas
+        personas = self.db.obtener_personas()
+
+        # Filtrar personas
+        for persona in personas:
+            # Convertir valores a minúsculas para comparación
+            nombre_persona = str(persona[1]).lower()
+            articulo_persona = str(persona[2]).lower()
+            municipio_persona = str(persona[5])
+            fecha_entrega = persona[7]
+
+            # Determinar estado
+            estado_persona = "Entregado" if fecha_entrega and fecha_entrega not in ['None', '', 'Pendiente'] else "Pendiente"
+
+            # Aplicar filtros
+            mostrar = True
+            if nombre and nombre not in nombre_persona:
+                mostrar = False
+            if articulo and articulo not in articulo_persona:
+                mostrar = False
+            if municipio and municipio != municipio_persona:
+                mostrar = False
+            if estado != 'Todos' and estado != estado_persona:
+                mostrar = False
+
+            # Mostrar si pasa todos los filtros
+            if mostrar:
+                # Convertir None o '' a 'Pendiente' para la visualización
+                valores = list(persona)
+                valores[-1] = 'Pendiente' if not valores[-1] or valores[-1] in ['None', ''] else valores[-1]
+                self.tree_personas.insert('', 'end', values=valores)
 
 class VentanaTransacciones:
     def __init__(self, master, app, db):
