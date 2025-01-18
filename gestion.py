@@ -252,16 +252,21 @@ class GestionDB:
         finally:
             conexion.close()
 
-    def actualizar_articulo(self, id_articulo, imagen):
+    def actualizar_articulo(self, id_articulo, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
+        """Actualiza todos los campos de un artículo"""
         try:
             conexion = sqlite3.connect(self.db_name)
             cursor = conexion.cursor()
             
             cursor.execute('''
                 UPDATE inventario 
-                SET imagen = ? 
+                SET nombre_articulo = ?,
+                    descripcion = ?,
+                    cantidad_disponible = ?,
+                    imagen = ?,
+                    fecha_ingreso = ?
                 WHERE id = ?
-            ''', (imagen, id_articulo))  # Solo actualiza la imagen
+            ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso, id_articulo))
             
             conexion.commit()
             return True

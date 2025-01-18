@@ -871,40 +871,55 @@ class Aplicacion:
                 messagebox.showerror("Error", "No se pudo eliminar el artículo")
 
     def actualizar_articulo(self):
+        """Actualiza los datos del artículo seleccionado"""
         seleccion = self.tree_inventario.selection()
         if not seleccion:
             messagebox.showwarning("Error", "Seleccione un artículo para actualizar")
             return
         
-        item = self.tree_inventario.item(seleccion[0])
-        id_articulo = item['values'][0]
-        valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
-        
-        # Validar campos numéricos
         try:
-            valores['cantidad_disponible'] = int(valores['cantidad_disponible'])
-        except ValueError:
-            messagebox.showwarning("Error", "La cantidad debe ser un número")
-            return
-        
-        # Obtener el artículo actual para mantener la imagen existente
-        articulo_actual = self.db.obtener_articulo(id_articulo)
-        imagen_actual = articulo_actual[4] if articulo_actual else None
-        
-        # Actualizar solo los datos, manteniendo la imagen existente
-        if self.db.actualizar_articulo(
-            id_articulo,
-            nombre_articulo=valores['nombre_articulo'],
-            descripcion=valores['descripcion'],
-            cantidad_disponible=valores['cantidad_disponible'],
-            imagen=imagen_actual,  # Mantener la imagen existente
-            fecha_ingreso=valores['fecha_ingreso']
-        ):
-            messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
-            self.limpiar_campos_inventario()
-            self.actualizar_lista_inventario()
-        else:
-            messagebox.showerror("Error", "No se pudo actualizar el artículo")
+            # Obtener el ID del artículo seleccionado
+            item = self.tree_inventario.item(seleccion[0])
+            id_articulo = item['values'][0]
+            
+            # Obtener los valores de los campos
+            nombre = self.campos_inventario['nombre_articulo'].get()
+            descripcion = self.campos_inventario['descripcion'].get()
+            cantidad = self.campos_inventario['cantidad_disponible'].get()
+            fecha = self.campos_inventario['fecha_ingreso'].get()
+            
+            # Validar campos obligatorios
+            if not nombre or not cantidad:
+                messagebox.showwarning("Error", "El nombre y la cantidad son obligatorios")
+                return
+            
+            try:
+                cantidad = int(cantidad)
+            except ValueError:
+                messagebox.showwarning("Error", "La cantidad debe ser un número entero")
+                return
+            
+            # Obtener la imagen actual del artículo
+            articulo_actual = self.db.obtener_articulo(id_articulo)
+            imagen_actual = articulo_actual[4] if articulo_actual else None
+            
+            # Actualizar el artículo
+            if self.db.actualizar_articulo(
+                id_articulo=id_articulo,
+                nombre_articulo=nombre,
+                descripcion=descripcion,
+                cantidad_disponible=cantidad,
+                imagen=imagen_actual,  # Mantener la imagen actual
+                fecha_ingreso=fecha
+            ):
+                messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
+                self.limpiar_campos_inventario()
+                self.actualizar_lista_inventario()
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar el artículo")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al actualizar el artículo: {str(e)}")
 
     def actualizar_lista_transacciones(self):
         # Limpiar el TreeView
