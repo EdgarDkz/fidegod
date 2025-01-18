@@ -708,47 +708,26 @@ class Aplicacion:
 
 
     def eliminar_imagen(self):
-        try:
-            # Verificar si hay un artículo seleccionado
-            seleccion = self.tree_inventario.selection()
-            if not seleccion:
-                messagebox.showwarning("Aviso", "Por favor, seleccione un artículo primero.")
-                return
-            
-            item = seleccion[0]
-            item_id = self.tree_inventario.item(item)['values'][0]
-            
-            # Obtener el artículo actual
-            articulo = self.db.obtener_articulo(item_id)
-            if not articulo or not articulo[4]:  # Si no hay artículo o no tiene imagen
-                messagebox.showinfo("Información", "Este artículo no tiene una imagen para eliminar.")
-                return
-            
-            # Confirmar la eliminación
-            if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen de este artículo?"):
-                # Actualizar el artículo manteniendo todos los datos excepto la imagen
-                if self.db.actualizar_articulo(
-                    id=item_id,
-                    nombre_articulo=articulo[1],  # Mantener el nombre del artículo
-                    descripcion=articulo[2],        # Mantener la descripción
-                    cantidad_disponible=articulo[3],  # Mantener la cantidad
-                    imagen=None,  # Eliminar la imagen
-                    fecha_ingreso=articulo[5]  # Asegúrate de pasar la fecha de ingreso
-                ):
-                    # Limpiar la imagen en la interfaz
-                    self.label_imagen.configure(image='')
-                    self.label_imagen.image = None
-                    self.ruta_imagen = None
-                    
-                    # Actualizar la lista de inventario
-                    self.actualizar_lista_inventario()
-                    messagebox.showinfo("Éxito", "Imagen eliminada correctamente.")
-                else:
-                    messagebox.showerror("Error", "No se pudo eliminar la imagen.")
+        seleccion = self.tree_inventario.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione un artículo para eliminar su imagen")
+            return
+        
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
+            try:
+                item = self.tree_inventario.item(seleccion[0])
+                id_articulo = item['values'][0]
                 
-        except Exception as e:
-            print(f"Error al eliminar imagen: {e}")
-            messagebox.showerror("Error", "Ocurrió un error al intentar eliminar la imagen.")
+                # Usar el método específico para actualizar solo la imagen
+                if self.db.actualizar_imagen_articulo(id_articulo, None):
+                    messagebox.showinfo("Éxito", "Imagen eliminada correctamente")
+                    self.label_imagen.configure(text="No hay imagen", image='')  # Cambiado de image_label a label_imagen
+                    self.label_imagen.image = None  # Limpiar la referencia de la imagen
+                    self.actualizar_lista_inventario()
+                else:
+                    messagebox.showerror("Error", "No se pudo eliminar la imagen")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al eliminar la imagen: {str(e)}")
 
     def agregar_articulo(self):
         valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
