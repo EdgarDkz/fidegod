@@ -429,7 +429,7 @@ class GestionDB:
                 WHERE 1=1
             '''
             params = []
-
+    
             if tipo:
                 query += ' AND t.tipo = ?'
                 params.append(tipo)
@@ -439,7 +439,7 @@ class GestionDB:
             if articulo:
                 query += ' AND i.nombre_articulo = ?'
                 params.append(articulo)
-
+    
             cursor.execute(query, params)
             return cursor.fetchall()
         finally:

@@ -401,6 +401,192 @@ class Aplicacion:
             except Exception as e:
                 messagebox.showerror("Error", f"Error al actualizar la imagen: {str(e)}")
 
+    def setup_inventario_tab(self):
+        # Limpiar cualquier widget existente en la pestaña
+        for widget in self.tab_inventario.winfo_children():
+            widget.destroy()
+
+        # Frame principal para contener todo utilizando grid
+        main_frame = ttk.Frame(self.tab_inventario)
+        main_frame.pack(fill='both', expand=True)
+
+        # Configurar las filas y columnas de main_frame
+        main_frame.columnconfigure(0, weight=1)
+        main_frame.rowconfigure(1, weight=1)  # Solo la fila 1 (frame_tree) tendrá peso
+
+        # Frame para búsqueda (fila 0)
+        self.frame_busqueda = ttk.LabelFrame(main_frame, text="Búsqueda")
+        self.frame_busqueda.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
+
+        # Configurar las columnas de frame_busqueda
+        self.frame_busqueda.columnconfigure(1, weight=1)
+
+        ttk.Label(self.frame_busqueda, text="Buscar:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        self.entry_busqueda_inventario = ttk.Entry(self.frame_busqueda)
+        self.entry_busqueda_inventario.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
+        
+        ttk.Button(self.frame_busqueda, text="Buscar", 
+                   command=self.buscar_articulos).grid(row=0, column=2, padx=5, pady=5)
+        
+        ttk.Button(self.frame_busqueda, text="Agregar Producto", 
+                   command=self.abrir_ventana_agregar_producto).grid(row=0, column=3, padx=5, pady=5)
+
+        # Frame para el TreeView (fila 1)
+        frame_tree = ttk.Frame(main_frame)
+        frame_tree.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
+
+        # Configurar el TreeView
+        self.tree_inventario = ttk.Treeview(frame_tree, columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha de Ingreso'))
+        
+        # Configurar las columnas
+        for col in ('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha de Ingreso'):
+            self.tree_inventario.heading(col, text=col)
+            self.tree_inventario.column(col, width=100, anchor='center')
+
+        # Ocultar la columna vacía del TreeView
+        self.tree_inventario['show'] = 'headings'
+
+        # Agregar scrollbar
+        scrollbar = ttk.Scrollbar(frame_tree, orient="vertical", command=self.tree_inventario.yview)
+        self.tree_inventario.configure(yscrollcommand=scrollbar.set)
+
+        # Empaquetar TreeView y scrollbar utilizando grid
+        self.tree_inventario.grid(row=0, column=0, sticky='nsew')
+        scrollbar.grid(row=0, column=1, sticky='ns')
+        
+        # Configurar el grid de frame_tree
+        frame_tree.columnconfigure(0, weight=1)
+        frame_tree.rowconfigure(0, weight=1)
+
+        # Vincular la selección del TreeView
+        self.tree_inventario.bind('<<TreeviewSelect>>', self.seleccionar_articulo)
+        
+        # Frame para detalles del artículo y la imagen (fila 2)
+        frame_detalles_imagen = ttk.Frame(main_frame)
+        frame_detalles_imagen.grid(row=2, column=0, sticky='ew', padx=5, pady=5)
+
+        # Configurar las columnas de frame_detalles_imagen
+        frame_detalles_imagen.columnconfigure(0, weight=1)
+        frame_detalles_imagen.columnconfigure(1, weight=1)
+
+        # Frame para detalles del artículo
+        self.frame_detalles = ttk.LabelFrame(frame_detalles_imagen, text="Detalles del Artículo")
+        self.frame_detalles.grid(row=0, column=0, sticky='ew', padx=(0, 5), pady=5)
+
+        # Campos para detalles del artículo
+        campos = [
+            ('Nombre del Artículo:', 'nombre_articulo'),
+            ('Descripción:', 'descripcion'),
+            ('Cantidad Disponible:', 'cantidad'),
+            ('Fecha de Ingreso:', 'fecha_ingreso')
+        ]
+
+        self.campos_inventario = {}
+        for i, (label, campo) in enumerate(campos):
+            ttk.Label(self.frame_detalles, text=label, width=20).grid(row=i, column=0, padx=5, pady=2, sticky='w')
+            if campo == 'fecha_ingreso':
+                widget = DateEntry(self.frame_detalles, width=30, background='darkblue', 
+                                 foreground='white', borderwidth=2, 
+                                 date_pattern='yyyy-mm-dd')
+            else:
+                widget = ttk.Entry(self.frame_detalles, width=30)
+            widget.grid(row=i, column=1, padx=5, pady=2, sticky='ew')
+            self.campos_inventario[campo] = widget
+
+        # Configurar las columnas de frame_detalles para expandirse
+        self.frame_detalles.columnconfigure(1, weight=1)
+
+        # Frame separado para la imagen
+        self.frame_imagen = ttk.LabelFrame(frame_detalles_imagen, text="Imagen del Artículo")
+        self.frame_imagen.grid(row=0, column=1, sticky='ew', padx=(5, 0), pady=5)
+
+        # Contenedor para la imagen y botones
+        frame_contenido_imagen = ttk.Frame(self.frame_imagen)
+        frame_contenido_imagen.pack(padx=10, pady=10, fill='both', expand=True)
+
+        # Label para mostrar la imagen
+        self.label_imagen = ttk.Label(frame_contenido_imagen, text="No hay imagen")
+        self.label_imagen.pack(pady=5, expand=True)
+
+        # Frame para los botones de imagen
+        frame_botones_imagen = ttk.Frame(frame_contenido_imagen)
+        frame_botones_imagen.pack(pady=5)
+
+        ttk.Button(frame_botones_imagen, text="Seleccionar Imagen",
+                  command=self.seleccionar_imagen).pack(side='left', padx=5)
+        ttk.Button(frame_botones_imagen, text="Eliminar Imagen",
+                  command=self.eliminar_imagen).pack(side='left', padx=5)
+
+        # Frame para botones de acción
+        frame_botones = ttk.Frame(self.frame_detalles)
+        frame_botones.grid(row=len(campos), column=0, columnspan=2, pady=10, sticky='e')
+
+        ttk.Button(frame_botones, text="Actualizar",
+                  command=self.actualizar_articulo).pack(side='left', padx=5)
+        ttk.Button(frame_botones, text="Eliminar",
+                  command=self.eliminar_articulo).pack(side='left', padx=5)
+        ttk.Button(frame_botones, text="Limpiar",
+                  command=self.limpiar_campos_inventario).pack(side='left', padx=5)
+
+    def mostrar_menu_contextual(self, event):
+        """Muestra el menú contextual al hacer clic derecho"""
+        # Obtener la posición del clic
+        self.tree_inventario.selection_set(self.tree_inventario.identify_row(event.y))
+        self.menu_contextual.post(event.x_root, event.y_root)
+
+    def editar_articulo(self):
+        """Abre la ventana de edición para el artículo seleccionado"""
+        seleccion = self.tree_inventario.selection()  # Usar tree_inventario en lugar de tree
+        if seleccion:
+            item = self.tree_inventario.item(seleccion[0])
+            # Obtener los valores del artículo seleccionado
+            valores = item['values']
+            
+            # Crear la ventana de edición
+            edit_window = tk.Toplevel(self.root)  # Usar self.root en lugar de self.master
+            VentanaEditarArticulo(edit_window, self, valores)
+
+    def eliminar_articulo(self):
+        seleccion = self.tree_inventario.selection()
+        if seleccion:
+            item = self.tree_inventario.item(seleccion[0])
+            # Aquí puedes implementar la lógica para eliminar el artículo
+            print("Eliminar artículo:", item['values'])
+
+    def seleccionar_imagen(self):
+        ruta = filedialog.askopenfilename(
+            filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
+        )
+        if ruta:
+            try:
+                # Obtener el artículo seleccionado
+                seleccion = self.tree_inventario.selection()
+                if seleccion:
+                    item = self.tree_inventario.item(seleccion[0])
+                    id_articulo = item['values'][0]
+                    
+                    # Guardar la imagen en la carpeta de imágenes
+                    nombre_archivo = f"imagenes/{os.path.basename(ruta)}"
+                    os.makedirs("imagenes", exist_ok=True)
+                    Image.open(ruta).save(nombre_archivo)
+                    
+                    # Mostrar la imagen en el label
+                    imagen = Image.open(ruta)
+                    imagen = imagen.resize((150, 150), Image.Resampling.LANCZOS)
+                    foto = ImageTk.PhotoImage(imagen)
+                    self.label_imagen.configure(image=foto)
+                    self.label_imagen.image = foto
+                    
+                    # Actualizar solo la imagen en la base de datos
+                    if self.db.actualizar_imagen_articulo(id_articulo, nombre_archivo):
+                        self.actualizar_lista_inventario()
+                        messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
+                    else:
+                        messagebox.showerror("Error", "No se pudo actualizar la imagen")
+                    
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al actualizar la imagen: {str(e)}")
+
     def setup_transacciones_tab(self):
         # Estilo para los frames
         style = ttk.Style()
@@ -500,6 +686,9 @@ class Aplicacion:
         # Cargar datos iniciales
         self.cargar_articulos_unicos()
         self.actualizar_lista_transacciones()
+
+
+
 
     def cargar_articulos_unicos(self):
         # Obtener artículos de la base de datos
