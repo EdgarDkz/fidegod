@@ -44,6 +44,9 @@ class Aplicacion:
         self.notebook.add(self.tab_inventario, text='Gestión de Inventario')
         self.notebook.add(self.tab_transacciones, text='Transacciones')
         
+        # Vincular el evento de cambio de pestaña
+        self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
+        
         # Botón para abrir la ventana de transacciones
         ttk.Button(self.tab_transacciones, text="Registrar Transacción", 
                 command=lambda: abrir_ventana_transacciones(self, self.db)).pack(pady=10)
@@ -220,6 +223,12 @@ class Aplicacion:
         style = ttk.Style()
         style.configure('Accent.TButton', font=('Helvetica', 10), padding=5, background='#4CAF50', foreground='white')
         style.configure('Danger.TButton', font=('Helvetica', 10), padding=5, background='#f44336', foreground='white')
+
+    def on_tab_changed(self, event):
+        """Método llamado cuando se cambia de pestaña en el Notebook."""
+        selected_tab = event.widget.tab('current')['text']
+        if selected_tab == 'Gestión de Inventario':
+            self.actualizar_lista_inventario()
 
     def cargar_nombres_y_articulos(self):
         # Obtener nombres y artículos de la base de datos
@@ -948,12 +957,13 @@ class Aplicacion:
             messagebox.showerror("Error", "No se pudo agregar el artículo")
 
     def actualizar_lista_inventario(self):
+        """Actualiza los datos mostrados en el TreeView de Inventario."""
         # Limpiar la lista actual
         for item in self.tree_inventario.get_children():
             self.tree_inventario.delete(item)
 
         # Obtener los artículos de la base de datos
-        articulos = self.db.obtener_articulos()  # Llama al método de GestionDB
+        articulos = self.db.obtener_articulos()  # Asegúrate de tener este método en GestionDB
 
         # Agregar los artículos a la lista
         for articulo in articulos:
@@ -1000,12 +1010,17 @@ class Aplicacion:
                 self.campos_inventario['fecha_ingreso'].set_date(valores[5])  # Si ya es un objeto datetime
 
     def buscar_articulos(self, event=None):
-        filtro = self.entry_busqueda_inventario.get()
+        """Filtra y muestra los artículos en inventario según el término de búsqueda."""
+        filtro = self.entry_busqueda_inventario.get().lower()  # Obtener el término de búsqueda en minúsculas
         for item in self.tree_inventario.get_children():
-            self.tree_inventario.delete(item)
-        articulos = self.db.obtener_inventario(filtro)
+            self.tree_inventario.delete(item)  # Limpiar la tabla
+
+        # Obtener los artículos filtrados de la base de datos
+        articulos = self.db.obtener_inventario(filtro)  # Asegúrate de que este método exista y acepte un filtro
+
+        # Insertar los artículos filtrados en la tabla
         for articulo in articulos:
-            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen
+            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen si es necesario
 
     def limpiar_campos_inventario(self):
         # Limpiar campos de texto
