@@ -58,41 +58,41 @@ class Aplicacion:
         # Configurar estilos personalizados para los botones
         style = ttk.Style()
         style.configure('Add.TButton', 
-                       background='#77dd77',  # Verde pastel
+                       background='#A8D5BA',  # Verde pastel mate
                        foreground='black',
-                       padding=10)
+                       padding=(10, 2))  # Reducir el padding vertical
         style.configure('Edit.TButton', 
-                       background='#007BFF',  # Azul
-                       foreground='white',
-                       padding=10)
-        style.configure('Date.TButton', 
-                       background='#FFC107',  # Amarillo
+                       background='#A0C4FF',  # Azul pastel mate
                        foreground='black',
-                       padding=10)
+                       padding=(10, 2))  # Reducir el padding vertical
+        style.configure('Date.TButton', 
+                       background='#FFD6A5',  # Amarillo pastel mate
+                       foreground='black',
+                       padding=(10, 2))  # Reducir el padding vertical
         style.configure('Delete.TButton', 
-                       background='#DC3545',  # Rojo
-                       foreground='white',
-                       padding=10)
+                       background='#FFADAD',  # Rojo pastel mate
+                       foreground='black',
+                       padding=(10, 2))  # Reducir el padding vertical
 
         # Botón para agregar persona
         ttk.Button(frame_botones, text="Agregar Persona", 
                    command=self.abrir_ventana_agregar_persona,
-                   style='Add.TButton').grid(row=0, column=0, padx=15, pady=5)
+                   style='Add.TButton').grid(row=0, column=0, padx=15, pady=5, sticky='w')
 
         # Botón para editar persona
         ttk.Button(frame_botones, text="Editar Persona", 
                    command=self.abrir_ventana_editar_persona,
-                   style='Edit.TButton').grid(row=0, column=1, padx=15, pady=5)
+                   style='Edit.TButton').grid(row=0, column=1, padx=15, pady=5, sticky='w')
         
         # Botón para establecer fecha de entrega
         ttk.Button(frame_botones, text="Establecer Fecha de Entrega", 
                    command=self.abrir_ventana_fecha_entrega,
-                   style='Date.TButton').grid(row=0, column=2, padx=15, pady=5)
+                   style='Date.TButton').grid(row=0, column=2, padx=15, pady=5, sticky='w')
         
         # Botón para eliminar persona (separado con más padding)
         ttk.Button(frame_botones, text="Eliminar Persona", 
                    command=self.eliminar_persona,
-                   style='Delete.TButton').grid(row=0, column=3, padx=(30, 15), pady=5, sticky='e')
+                   style='Delete.TButton').grid(row=0, column=3, padx=(30, 15), pady=5, sticky='w')
         
         # Ocultar detalles de persona
         self.frame_formulario = ttk.LabelFrame(self.tab_personas, text="Detalles de Persona")
@@ -760,6 +760,48 @@ class Aplicacion:
         self.tree_personas = ttk.Treeview(self.tab_personas, columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 'Municipio', 'Fecha Petición', 'Fecha Entrega'), show='headings')
         self.tree_personas.pack(fill='both', expand=True, padx=5, pady=5)
 
+        # Configurar el menú contextual
+        self.menu_contextual = tk.Menu(self.root, tearoff=0)
+        
+        # Configurar estilo del menú
+        self.menu_contextual.configure(
+            font=('Helvetica', 10),
+            bg='#ffffff',
+            fg='#333333',
+            activebackground='#e1f5fe',
+            activeforeground='#000000',
+            relief='flat',
+            bd=1
+        )
+        
+        # Agregar opciones al menú
+        self.menu_contextual.add_command(
+            label="✨ Agregar Persona",
+            command=self.abrir_ventana_agregar_persona,
+            font=('Helvetica', 10)
+        )
+        self.menu_contextual.add_separator()
+        self.menu_contextual.add_command(
+            label="✏️ Editar Persona",
+            command=self.abrir_ventana_editar_persona,
+            font=('Helvetica', 10)
+        )
+        self.menu_contextual.add_command(
+            label="📅 Establecer Fecha de Entrega",
+            command=self.abrir_ventana_fecha_entrega,
+            font=('Helvetica', 10)
+        )
+        self.menu_contextual.add_separator()
+        self.menu_contextual.add_command(
+            label="🗑️ Eliminar Persona",
+            command=self.eliminar_persona,
+            font=('Helvetica', 10),
+            foreground='#dc3545'
+        )
+
+        # Vincular el clic derecho al TreeView
+        self.tree_personas.bind("<Button-3>", self.mostrar_menu_contextual)
+
         # Configurar columnas
         for col in self.tree_personas['columns']:
             self.tree_personas.heading(col, text=col)
@@ -1226,6 +1268,19 @@ class Aplicacion:
                 valores = list(persona)
                 valores[-1] = 'Pendiente' if not valores[-1] or valores[-1] in ['None', ''] else valores[-1]
                 self.tree_personas.insert('', 'end', values=valores)
+
+    def mostrar_menu_contextual(self, event):
+        """Muestra el menú contextual en la posición del clic"""
+        # Seleccionar el item bajo el cursor
+        item = self.tree_personas.identify_row(event.y)
+        if item:
+            # Seleccionar el item
+            self.tree_personas.selection_set(item)
+            # Mostrar el menú contextual
+            try:
+                self.menu_contextual.tk_popup(event.x_root, event.y_root)
+            finally:
+                self.menu_contextual.grab_release()
 
 class VentanaTransacciones:
     def __init__(self, master, app, db):
