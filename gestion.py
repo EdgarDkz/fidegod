@@ -467,17 +467,15 @@ class GestionDB:
             print(f"Error al obtener persona por ID: {e}")
             return None
 
-    def actualizar_imagen_articulo(self, id_articulo, imagen):
-        """Actualiza solo la imagen de un artículo"""
+    def actualizar_imagen_articulo(self, id_articulo, ruta_imagen):
+        """Actualiza la imagen de un artículo en la base de datos"""
         try:
             cursor = self.conn.cursor()
-            
             cursor.execute('''
                 UPDATE inventario 
                 SET imagen = ?
                 WHERE id = ?
-            ''', (imagen, id_articulo))
-            
+            ''', (ruta_imagen, id_articulo))
             self.conn.commit()
             return True
         except Exception as e:
