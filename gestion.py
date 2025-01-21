@@ -432,16 +432,23 @@ class GestionDB:
         try:
             cursor = self.conn.cursor()
             query = '''
-                SELECT t.id, i.nombre_articulo AS articulo, t.tipo, t.cantidad, 
-                       t.stock_actual AS "stock sin transaccion", 
-                       (t.stock_actual + CASE WHEN t.tipo = 'entrada' THEN t.cantidad ELSE -t.cantidad END) AS "stock con transaccion", 
-                       t.fecha 
-                FROM transacciones t 
+                SELECT 
+                    t.id,
+                    i.nombre_articulo,
+                    t.tipo,
+                    t.cantidad,
+                    t.stock_actual,
+                    CASE 
+                        WHEN t.tipo = 'entrada' THEN t.stock_actual + t.cantidad
+                        ELSE t.stock_actual - t.cantidad
+                    END as stock_posterior,
+                    t.fecha
+                FROM transacciones t
                 JOIN inventario i ON t.id_articulo = i.id
                 WHERE 1=1
             '''
             params = []
-    
+
             if tipo:
                 query += ' AND t.tipo = ?'
                 params.append(tipo)
@@ -451,7 +458,9 @@ class GestionDB:
             if articulo:
                 query += ' AND i.nombre_articulo = ?'
                 params.append(articulo)
-    
+
+            query += ' ORDER BY t.fecha DESC'
+            
             cursor.execute(query, params)
             return cursor.fetchall()
         except sqlite3.Error as e:

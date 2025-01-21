@@ -6,6 +6,37 @@ from gestion import GestionDB
 from tkcalendar import DateEntry
 from datetime import datetime
 
+class ToolTip(object):
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip = None
+        self.widget.bind('<Enter>', self.enter)
+        self.widget.bind('<Leave>', self.leave)
+
+    def enter(self, event=None):
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        
+        self.tooltip = tk.Toplevel(self.widget)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.wm_geometry(f"+{x}+{y}")
+        
+        label = ttk.Label(self.tooltip, text=self.text, 
+                         justify='left',
+                         background="#ffffe0", 
+                         relief='solid', 
+                         borderwidth=1)
+        label.pack()
+
+    def leave(self, event=None):
+        if self.tooltip:
+            self.tooltip.destroy()
+            self.tooltip = None
+
+# Asegúrate de que esta clase esté definida antes de usarla en tu aplicación
+
 class Aplicacion:
     def __init__(self, root):
         self.root = root
@@ -278,7 +309,7 @@ class Aplicacion:
         tree_frame.pack(fill='both', expand=True)
         
         self.tree_inventario = ttk.Treeview(tree_frame, 
-                                           columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Fecha'),
+                                           columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
                                            show='headings',
                                            style='Custom.Treeview')
         
@@ -287,6 +318,7 @@ class Aplicacion:
         self.tree_inventario.heading('Nombre', text='Nombre del Artículo')
         self.tree_inventario.heading('Descripción', text='Descripción')
         self.tree_inventario.heading('Cantidad', text='Cantidad')
+        self.tree_inventario.heading('Imagen', text='Imagen')
         self.tree_inventario.heading('Fecha', text='Fecha de Ingreso')
         
         # Ajustar anchos de columna
@@ -294,6 +326,7 @@ class Aplicacion:
         self.tree_inventario.column('Nombre', width=200)
         self.tree_inventario.column('Descripción', width=200)
         self.tree_inventario.column('Cantidad', width=100)
+        self.tree_inventario.column('Imagen', width=150)
         self.tree_inventario.column('Fecha', width=100)
 
         # Scrollbars
@@ -316,55 +349,112 @@ class Aplicacion:
         details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=10)
         details_frame.pack(fill='x', pady=(0, 5))
         
-        # Campos de detalles
-        campos = [
-            ('Nombre:', 'nombre_articulo'),
-            ('Descripción:', 'descripcion'),
-            ('Cantidad:', 'cantidad_disponible'),
-            ('Fecha de Ingreso:', 'fecha_ingreso')
-        ]
+        # Definir los campos de entrada
+        self.campos_inventario = {}
         
-        self.campos_edicion = {}
+        # Crear campos con sus etiquetas
+        campos = [
+            ('Nombre:', 'nombre'),
+            ('Descripción:', 'descripcion'),
+            ('Cantidad:', 'cantidad'),
+            ('Fecha de Ingreso:', 'fecha')
+        ]
+
         for i, (label, campo) in enumerate(campos):
             ttk.Label(details_frame, text=label).grid(row=i, column=0, sticky='e', padx=5, pady=2)
-            entry = ttk.Entry(details_frame)
-            entry.grid(row=i, column=1, sticky='ew', padx=5, pady=2)
-            self.campos_edicion[campo] = entry
-        
-        details_frame.grid_columnconfigure(1, weight=1)
+            if campo == 'fecha':
+                widget = DateEntry(details_frame, width=20, background='darkblue',
+                                 foreground='white', borderwidth=2,
+                                 date_pattern='yyyy-mm-dd')
+            else:
+                widget = ttk.Entry(details_frame, width=30)
+            widget.grid(row=i, column=1, sticky='w', padx=5, pady=2)
+            self.campos_inventario[campo] = widget
 
-        # Frame para imagen
-        image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=10)
-        image_frame.pack(fill='both', expand=True)
-        
-        # Label para la imagen
-        self.label_imagen = ttk.Label(image_frame, text="No hay imagen seleccionada")
-        self.label_imagen.pack(fill='both', expand=True, padx=5, pady=5)
-        
-        # Botones de imagen
+        # Frame para la imagen
+        image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo")
+        image_frame.pack(fill='both', expand=True, padx=5, pady=5)
+
+        # Label para mostrar la imagen
+        self.label_imagen = ttk.Label(image_frame)
+        self.label_imagen.pack(pady=10)
+
+        # Botones para la imagen
         btn_frame = ttk.Frame(image_frame)
-        btn_frame.pack(fill='x', pady=5)
+        btn_frame.pack(pady=5)
         
-        ttk.Button(btn_frame, text="Seleccionar Imagen",
+        ttk.Button(btn_frame, text="Seleccionar Imagen", 
                    command=self.seleccionar_imagen).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Eliminar Imagen",
+        ttk.Button(btn_frame, text="Eliminar Imagen", 
                    command=self.eliminar_imagen).pack(side='left', padx=5)
 
-        # Botones de acción
-        action_frame = ttk.Frame(right_panel)
-        action_frame.pack(fill='x', pady=5)
-        
-        ttk.Button(action_frame, text="Actualizar",
-                   command=self.actualizar_articulo,
-                   style='Accent.TButton').pack(side='left', padx=5)
-        ttk.Button(action_frame, text="Eliminar",
-                   command=self.eliminar_articulo).pack(side='left', padx=5)
-        ttk.Button(action_frame, text="Limpiar",
-                   command=self.limpiar_campos_inventario).pack(side='left', padx=5)
+        # Frame para los botones de acción
+        button_frame = ttk.Frame(details_frame)
+        button_frame.grid(row=5, column=0, sticky='ew', pady=10)
 
-        # Vincular eventos
-        self.tree_inventario.bind('<<TreeviewSelect>>', self.seleccionar_articulo)
-        self.entry_busqueda.bind('<Return>', self.buscar_articulos)
+        # Estilo para los botones
+        style = ttk.Style()
+        style.configure('Success.TButton', background='#28a745')
+        style.configure('Danger.TButton', background='#dc3545')
+        style.configure('Warning.TButton', background='#ffc107')
+
+        # Crear un subframe para cada botón para mejor organización
+        update_frame = ttk.Frame(button_frame)
+        update_frame.grid(row=0, column=0, padx=5)
+
+        delete_frame = ttk.Frame(button_frame)
+        delete_frame.grid(row=0, column=1, padx=5)
+
+        clear_frame = ttk.Frame(button_frame)
+        clear_frame.grid(row=0, column=2, padx=5)
+
+        # Botón Actualizar con ícono y estilo verde
+        self.btn_actualizar = ttk.Button(
+            update_frame,
+            text="✓ Actualizar",
+            style='Success.TButton',
+            command=self.actualizar_articulo
+        )
+        self.btn_actualizar.grid()
+
+        # Botón Eliminar con ícono y estilo rojo
+        self.btn_eliminar = ttk.Button(
+            delete_frame,
+            text="✗ Eliminar",
+            style='Danger.TButton',
+            command=self.eliminar_articulo
+        )
+        self.btn_eliminar.grid()
+
+        # Botón Limpiar con ícono y estilo amarillo
+        self.btn_limpiar = ttk.Button(
+            clear_frame,
+            text="↺ Limpiar",
+            style='Warning.TButton',
+            command=self.limpiar_campos_inventario
+        )
+        self.btn_limpiar.grid()
+
+        # Tooltips para los botones
+        ToolTip(self.btn_actualizar, "Guardar cambios en el artículo seleccionado")
+        ToolTip(self.btn_eliminar, "Eliminar el artículo seleccionado")
+        ToolTip(self.btn_limpiar, "Limpiar todos los campos")
+
+        # Deshabilitar botones inicialmente
+        self.btn_actualizar.config(state='disabled')
+        self.btn_eliminar.config(state='disabled')
+
+        # Vincular la selección del TreeView para habilitar/deshabilitar botones
+        self.tree_inventario.bind('<<TreeviewSelect>>', self.on_treeview_select)
+
+    def on_treeview_select(self, event=None):
+        """Habilita/deshabilita botones según la selección"""
+        if self.tree_inventario.selection():
+            self.btn_actualizar.config(state='normal')
+            self.btn_eliminar.config(state='normal')
+        else:
+            self.btn_actualizar.config(state='disabled')
+            self.btn_eliminar.config(state='disabled')
 
     def mostrar_menu_contextual(self, event):
         """Muestra el menú contextual al hacer clic derecho"""
@@ -494,17 +584,30 @@ class Aplicacion:
         tree_frame = ttk.Frame(main_frame)
         tree_frame.pack(fill='both', expand=True, pady=5)
 
-        # Crear TreeView
-        self.tree_transacciones = ttk.Treeview(tree_frame, 
-            columns=('ID', 'Artículo', 'Tipo', 'Cantidad', 'Stock sin Transacción', 
-                    'Stock con Transacción', 'Fecha'),
-            show='headings',
-            style="Treeview")
+        # Configurar las columnas del TreeView de transacciones
+        self.tree_transacciones = ttk.Treeview(
+            tree_frame,
+            columns=('ID', 'Articulo', 'Tipo', 'Cantidad', 'Stock sin Transaccion', 'Stock con Transaccion', 'Fecha'),
+            show='headings'
+        )
 
-        # Configurar columnas
-        for col in self.tree_transacciones['columns']:
-            self.tree_transacciones.heading(col, text=col)
-            self.tree_transacciones.column(col, width=100)
+        # Configurar los encabezados y anchos de columna
+        self.tree_transacciones.heading('ID', text='ID')
+        self.tree_transacciones.heading('Articulo', text='Artículo')
+        self.tree_transacciones.heading('Tipo', text='Tipo')
+        self.tree_transacciones.heading('Cantidad', text='Cantidad')
+        self.tree_transacciones.heading('Stock sin Transaccion', text='Stock sin Transacción')
+        self.tree_transacciones.heading('Stock con Transaccion', text='Stock con Transacción')
+        self.tree_transacciones.heading('Fecha', text='Fecha')
+
+        # Configurar anchos de columna
+        self.tree_transacciones.column('ID', width=50)
+        self.tree_transacciones.column('Articulo', width=150)
+        self.tree_transacciones.column('Tipo', width=100)
+        self.tree_transacciones.column('Cantidad', width=100)
+        self.tree_transacciones.column('Stock sin Transaccion', width=150)
+        self.tree_transacciones.column('Stock con Transaccion', width=150)
+        self.tree_transacciones.column('Fecha', width=150)
 
         # Agregar scrollbar
         scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', 
@@ -516,9 +619,6 @@ class Aplicacion:
         # Cargar datos iniciales
         self.cargar_articulos_unicos()
         self.actualizar_lista_transacciones()
-
-
-
 
     def cargar_articulos_unicos(self):
         # Obtener artículos de la base de datos
@@ -537,40 +637,42 @@ class Aplicacion:
             self.entry_fecha_desde.config(state='normal')
             self.entry_fecha_hasta.config(state='normal')
 
-    def filtrar_transacciones(self, event=None):
-        tipo = self.combo_tipo.get()
-        articulo = self.combo_articulo.get()
+    def filtrar_transacciones(self):
+        """Filtra las transacciones según los criterios seleccionados"""
+        tipo = self.combo_tipo.get() if self.combo_tipo.get() != 'Todos' else None
+        articulo = self.combo_articulo.get() if self.combo_articulo.get() != 'Todos' else None
         
-        # Si la casilla está marcada, no usar fechas
-        if self.filtrar_fecha_var.get():
-            fecha_desde = None
-            fecha_hasta = None
-        else:
-            fecha_desde = self.entry_fecha_desde.get()
-            fecha_hasta = self.entry_fecha_hasta.get()
+        fecha_desde = None
+        fecha_hasta = None
+        if not self.filtrar_fecha_var.get():
+            fecha_desde = self.entry_fecha_desde.get_date().strftime('%Y-%m-%d')
+            fecha_hasta = self.entry_fecha_hasta.get_date().strftime('%Y-%m-%d')
 
-        # Verificar si al menos un campo tiene valor
-        if not any([tipo, articulo, (fecha_desde and fecha_hasta)]):
-            messagebox.showwarning("Advertencia", "Por favor, ingrese al menos un criterio de búsqueda.")
-            return
-
-        # Limpiar el TreeView
+        # Limpiar TreeView
         for item in self.tree_transacciones.get_children():
             self.tree_transacciones.delete(item)
 
         # Obtener transacciones filtradas
-        transacciones = self.app.obtener_transacciones_filtradas(tipo, fecha_desde, fecha_hasta, articulo)
+        transacciones = self.db.obtener_transacciones_filtradas(
+            tipo=tipo,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            articulo=articulo
+        )
 
-        # Insertar las transacciones filtradas
-        if transacciones:
-            for transaccion in transacciones:
-                fecha_formateada = transaccion[6].split(" ")[0]
-                self.tree_transacciones.insert('', 'end', values=(
-                    transaccion[0], transaccion[1], transaccion[2], 
-                    transaccion[3], transaccion[4], transaccion[5], 
-                    fecha_formateada))
-        else:
-            messagebox.showinfo("Información", "No se encontraron transacciones para los criterios seleccionados.")
+        # Insertar transacciones filtradas
+        for transaccion in transacciones:
+            fecha = datetime.strptime(transaccion[6], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+            valores = (
+                transaccion[0],  # ID
+                transaccion[1],  # Nombre del artículo
+                transaccion[2],  # Tipo
+                transaccion[3],  # Cantidad
+                transaccion[4],  # Stock sin transacción
+                transaccion[5],  # Stock con transacción
+                fecha           # Fecha formateada
+            )
+            self.tree_transacciones.insert('', 'end', values=valores)
 
     def exportar_transacciones(self):
         success, message = self.db.exportar_a_csv('transacciones')
@@ -831,7 +933,16 @@ class Aplicacion:
 
         # Insertar artículos en el TreeView
         for articulo in articulos:
-            self.tree_inventario.insert('', 'end', values=articulo)
+            # Reorganizar los valores para mostrar la imagen entre cantidad y fecha
+            valores = (
+                articulo[0],  # ID
+                articulo[1],  # Nombre
+                articulo[2],  # Descripción
+                articulo[3],  # Cantidad
+                articulo[4],  # Imagen
+                articulo[5]   # Fecha
+            )
+            self.tree_inventario.insert('', 'end', values=valores)
 
     def seleccionar_articulo(self, event=None):
         """Maneja la selección de un artículo en el TreeView"""
@@ -843,51 +954,56 @@ class Aplicacion:
         item = self.tree_inventario.item(seleccion[0])
         valores = item['values']
 
-        # Limpiar campos actuales
-        for entry in self.campos_edicion.values():
-            entry.delete(0, tk.END)
-
-        # Llenar los campos con los valores del artículo
         if valores:
-            self.campos_edicion['nombre_articulo'].insert(0, valores[1])  # Nombre
-            self.campos_edicion['descripcion'].insert(0, valores[2])      # Descripción
-            self.campos_edicion['cantidad_disponible'].insert(0, valores[3])  # Cantidad
-            self.campos_edicion['fecha_ingreso'].insert(0, valores[5])    # Fecha de ingreso
+            # Limpiar campos actuales
+            for campo in self.campos_inventario.values():
+                if isinstance(campo, ttk.Entry):
+                    campo.delete(0, tk.END)
+                elif isinstance(campo, DateEntry):
+                    campo.set_date(datetime.now())
 
-            # Mostrar imagen si existe
-            ruta_imagen = valores[4]  # La imagen está en el índice 4
+            # Llenar los campos con los valores del artículo
+            self.campos_inventario['nombre'].delete(0, tk.END)
+            self.campos_inventario['nombre'].insert(0, valores[1])  # Nombre del artículo
+            
+            self.campos_inventario['descripcion'].delete(0, tk.END)
+            self.campos_inventario['descripcion'].insert(0, valores[2])  # Descripción
+            
+            self.campos_inventario['cantidad'].delete(0, tk.END)
+            self.campos_inventario['cantidad'].insert(0, valores[3])  # Cantidad
+            
+            # Manejar la fecha
+            try:
+                fecha = datetime.strptime(valores[5], '%Y-%m-%d')  # Fecha de ingreso
+                self.campos_inventario['fecha'].set_date(fecha)
+            except (ValueError, TypeError):
+                self.campos_inventario['fecha'].set_date(datetime.now())
+
+            # Mostrar imagen
+            ruta_imagen = valores[4]  # Ruta de la imagen
             if ruta_imagen and ruta_imagen != 'None' and os.path.exists(ruta_imagen):
                 self.mostrar_imagen(ruta_imagen)
             else:
-                # Mostrar imagen por defecto o mensaje
                 self.mostrar_imagen_por_defecto()
 
     def mostrar_imagen_por_defecto(self):
-        """Muestra una imagen por defecto o mensaje cuando no hay imagen"""
-        # Crear una imagen en blanco con texto
+        """Muestra una imagen por defecto cuando no hay imagen disponible"""
         imagen = Image.new('RGB', (200, 200), 'lightgray')
         draw = ImageDraw.Draw(imagen)
-        
-        # Agregar texto "Sin Imagen"
+        texto = "No hay imagen"
         try:
-            # Intentar usar una fuente del sistema
             fuente = ImageFont.truetype("arial.ttf", 20)
         except:
-            # Si no se encuentra la fuente, usar la fuente por defecto
             fuente = ImageFont.load_default()
-
+        
         # Centrar el texto
-        texto = "Sin Imagen"
         bbox = draw.textbbox((0, 0), texto, font=fuente)
         w = bbox[2] - bbox[0]
         h = bbox[3] - bbox[1]
         x = (200 - w) / 2
         y = (200 - h) / 2
         
-        # Dibujar el texto
         draw.text((x, y), texto, fill='black', font=fuente)
-        
-        # Convertir a PhotoImage
         foto = ImageTk.PhotoImage(imagen)
         self.label_imagen.configure(image=foto)
         self.label_imagen.image = foto
@@ -895,6 +1011,7 @@ class Aplicacion:
     def mostrar_imagen(self, ruta_imagen):
         """Muestra la imagen en el label de imagen"""
         try:
+            # Abrir y redimensionar la imagen
             imagen = Image.open(ruta_imagen)
             # Mantener la proporción de la imagen
             ancho = 200
@@ -977,10 +1094,10 @@ class Aplicacion:
             id_articulo = item['values'][0]
             
             # Obtener los valores de los campos
-            nombre = self.campos_inventario['nombre_articulo'].get()
+            nombre = self.campos_inventario['nombre'].get()
             descripcion = self.campos_inventario['descripcion'].get()
-            cantidad = self.campos_inventario['cantidad_disponible'].get()
-            fecha = self.campos_inventario['fecha_ingreso'].get()
+            cantidad = self.campos_inventario['cantidad'].get()
+            fecha = self.campos_inventario['fecha'].get()
             
             # Validar campos obligatorios
             if not nombre or not cantidad:
@@ -1016,16 +1133,29 @@ class Aplicacion:
             messagebox.showerror("Error", f"Error al actualizar el artículo: {str(e)}")
 
     def actualizar_lista_transacciones(self):
+        """Actualiza la lista de transacciones en el TreeView"""
         # Limpiar el TreeView
         for item in self.tree_transacciones.get_children():
             self.tree_transacciones.delete(item)
 
-        # Obtener y mostrar las transacciones
-        transacciones = self.db.obtener_transacciones()  # Asegúrate de tener este método en tu clase GestionDB
+        # Obtener las transacciones
+        transacciones = self.db.obtener_transacciones_filtradas()
+
+        # Insertar las transacciones en el TreeView
         for transaccion in transacciones:
-            # Formatear la fecha para mostrar solo el día (sin hora ni segundos)
-            fecha_formateada = transaccion[6].split(" ")[0]  # Suponiendo que la fecha está en el índice 6
-            self.tree_transacciones.insert('', 'end', values=(transaccion[0], transaccion[1], transaccion[2], transaccion[3], transaccion[4], transaccion[5], fecha_formateada))
+            # Formatear la fecha para mejor visualización
+            fecha = datetime.strptime(transaccion[6], '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+            
+            valores = (
+                transaccion[0],  # ID
+                transaccion[1],  # Nombre del artículo
+                transaccion[2],  # Tipo
+                transaccion[3],  # Cantidad
+                transaccion[4],  # Stock sin transacción
+                transaccion[5],  # Stock con transacción
+                fecha           # Fecha formateada
+            )
+            self.tree_transacciones.insert('', 'end', values=valores)
 
     def abrir_ventana_agregar_persona(self):
         ventana = tk.Toplevel()
@@ -1649,6 +1779,7 @@ class VentanaEditarArticulo:
         self.master = master
         self.app = app
         self.articulo = articulo
+        self.ruta_imagen = articulo[4] if articulo[4] != 'None' else None
         
         # Configurar ventana
         self.master.title("Editar Artículo")
@@ -1741,15 +1872,35 @@ class VentanaEditarArticulo:
     
     def cargar_datos_articulo(self):
         """Carga los datos del artículo en los campos"""
-        self.campos['nombre'].insert(0, self.articulo[1])
-        self.campos['descripcion'].insert(0, self.articulo[2])
-        self.campos['cantidad'].insert(0, str(self.articulo[3]))
-        self.campos['fecha'].set_date(self.articulo[5])
-        
-        # Cargar imagen si existe
-        if self.articulo[4] and self.articulo[4] != 'None':
-            self.mostrar_imagen(self.articulo[4])
-    
+        try:
+            # Cargar datos en los campos
+            self.campos['nombre'].delete(0, tk.END)
+            self.campos['nombre'].insert(0, self.articulo[1])  # Nombre
+            
+            self.campos['descripcion'].delete(0, tk.END)
+            self.campos['descripcion'].insert(0, self.articulo[2])  # Descripción
+            
+            self.campos['cantidad'].delete(0, tk.END)
+            self.campos['cantidad'].insert(0, str(self.articulo[3]))  # Cantidad
+            
+            # Cargar fecha
+            if self.articulo[5]:  # Fecha de ingreso
+                try:
+                    fecha = datetime.strptime(self.articulo[5], '%Y-%m-%d')
+                    self.campos['fecha'].set_date(fecha)
+                except (ValueError, TypeError):
+                    self.campos['fecha'].set_date(datetime.now())
+            
+            # Cargar imagen
+            if self.ruta_imagen and os.path.exists(self.ruta_imagen):
+                self.mostrar_imagen(self.ruta_imagen)
+            else:
+                self.mostrar_imagen_por_defecto()
+                
+        except Exception as e:
+            print(f"Error al cargar datos del artículo: {e}")
+            messagebox.showerror("Error", "No se pudieron cargar los datos del artículo")
+
     def actualizar_articulo(self):
         """Actualiza el artículo con los nuevos datos"""
         try:
@@ -1776,7 +1927,7 @@ class VentanaEditarArticulo:
                 nombre,
                 descripcion,
                 cantidad,
-                self.articulo[4],  # Imagen actual
+                self.ruta_imagen,  # Usar la ruta de imagen actualizada
                 fecha
             ):
                 messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
@@ -1789,81 +1940,265 @@ class VentanaEditarArticulo:
             messagebox.showerror("Error", f"Error al actualizar: {str(e)}")
     
     def seleccionar_imagen(self):
-        """Permite seleccionar una nueva imagen para el artículo"""
-        seleccion = self.tree_inventario.selection()
-        if not seleccion:
-            messagebox.showwarning("Advertencia", "Por favor, seleccione un artículo primero")
-            return
-
+        """Permite seleccionar una nueva imagen"""
         file_path = filedialog.askopenfilename(
             filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
         )
-        
         if file_path:
-            try:
-                item = self.tree_inventario.item(seleccion[0])
-                id_articulo = item['values'][0]
-                
-                # Actualizar la imagen en la base de datos
-                if self.db.actualizar_imagen_articulo(id_articulo, file_path):
-                    self.mostrar_imagen(file_path)
-                    messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
-                    self.actualizar_lista_inventario()
-                else:
-                    messagebox.showerror("Error", "No se pudo actualizar la imagen")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error al actualizar la imagen: {str(e)}")
-    
-    def eliminar_imagen(self):
-        """Elimina la imagen del artículo seleccionado"""
-        seleccion = self.tree_inventario.selection()
-        if not seleccion:
-            messagebox.showwarning("Advertencia", "Por favor, seleccione un artículo primero")
-            return
+            self.ruta_imagen = file_path
+            self.mostrar_imagen(file_path)
 
+    def eliminar_imagen(self):
+        """Elimina la imagen seleccionada"""
         if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
-            try:
-                item = self.tree_inventario.item(seleccion[0])
-                id_articulo = item['values'][0]
-                
-                # Actualizar la base de datos con None como imagen
-                if self.db.actualizar_imagen_articulo(id_articulo, None):
-                    self.label_imagen.configure(text="No hay imagen seleccionada")
-                    self.label_imagen.image = None
-                    messagebox.showinfo("Éxito", "Imagen eliminada correctamente")
-                    self.actualizar_lista_inventario()
-                else:
-                    messagebox.showerror("Error", "No se pudo eliminar la imagen")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error al eliminar la imagen: {str(e)}")
-    
-    def mostrar_imagen(self, ruta_imagen):
-        """Muestra la imagen en el label de imagen"""
+            self.ruta_imagen = None
+            self.mostrar_imagen_por_defecto()
+
+    def mostrar_imagen_por_defecto(self):
+        """Muestra una imagen por defecto cuando no hay imagen disponible"""
         try:
-            imagen = Image.open(ruta_imagen)
-            # Mantener la proporción de la imagen
-            ancho = 200
-            alto = 200
-            proporcion = min(ancho/float(imagen.size[0]), alto/float(imagen.size[1]))
-            nuevo_ancho = int(imagen.size[0] * proporcion)
-            nuevo_alto = int(imagen.size[1] * proporcion)
+            # Crear imagen en blanco
+            imagen = Image.new('RGB', (200, 200), 'lightgray')
+            draw = ImageDraw.Draw(imagen)
             
-            imagen = imagen.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+            # Configurar texto
+            texto = "No hay imagen"
+            try:
+                fuente = ImageFont.truetype("arial.ttf", 20)
+            except:
+                fuente = ImageFont.load_default()
             
-            # Crear una imagen en blanco del tamaño deseado
-            imagen_fondo = Image.new('RGB', (ancho, alto), 'white')
-            # Calcular la posición para centrar la imagen
-            x = (ancho - nuevo_ancho) // 2
-            y = (alto - nuevo_alto) // 2
-            # Pegar la imagen redimensionada en el centro
-            imagen_fondo.paste(imagen, (x, y))
+            # Centrar texto
+            bbox = draw.textbbox((0, 0), texto, font=fuente)
+            w = bbox[2] - bbox[0]
+            h = bbox[3] - bbox[1]
+            x = (200 - w) / 2
+            y = (200 - h) / 2
             
-            foto = ImageTk.PhotoImage(imagen_fondo)
+            # Dibujar texto
+            draw.text((x, y), texto, fill='black', font=fuente)
+            
+            # Mostrar imagen
+            foto = ImageTk.PhotoImage(imagen)
             self.image_label.configure(image=foto)
             self.image_label.image = foto
         except Exception as e:
-            print(f"Error al cargar la imagen: {e}")
+            print(f"Error al mostrar imagen por defecto: {e}")
+            self.image_label.configure(text="No hay imagen disponible")
+
+    def mostrar_imagen(self, ruta_imagen):
+        """Muestra la imagen en el label de imagen"""
+        try:
+            # Abrir y redimensionar la imagen
+            imagen = Image.open(ruta_imagen)
+            
+            # Calcular nuevas dimensiones manteniendo la proporción
+            ancho_max = 200
+            alto_max = 200
+            ratio = min(ancho_max/imagen.width, alto_max/imagen.height)
+            nuevo_ancho = int(imagen.width * ratio)
+            nuevo_alto = int(imagen.height * ratio)
+            
+            # Redimensionar la imagen
+            imagen = imagen.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+            
+            # Crear imagen de fondo
+            imagen_fondo = Image.new('RGB', (ancho_max, alto_max), 'white')
+            
+            # Calcular posición para centrar
+            x = (ancho_max - nuevo_ancho) // 2
+            y = (alto_max - nuevo_alto) // 2
+            
+            # Pegar imagen redimensionada en el fondo
+            imagen_fondo.paste(imagen, (x, y))
+            
+            # Convertir a PhotoImage y mostrar
+            foto = ImageTk.PhotoImage(imagen_fondo)
+            self.image_label.configure(image=foto)
+            self.image_label.image = foto  # Mantener referencia
+        except Exception as e:
+            print(f"Error al mostrar imagen: {e}")
             self.mostrar_imagen_por_defecto()
+
+    def buscar_articulos(self, event=None):
+        """Filtra y muestra los artículos en inventario según el término de búsqueda."""
+        filtro = self.entry_busqueda_inventario.get().lower()  # Obtener el término de búsqueda en minúsculas
+        for item in self.tree_inventario.get_children():
+            self.tree_inventario.delete(item)  # Limpiar la tabla
+
+        # Obtener los artículos filtrados de la base de datos
+        articulos = self.db.obtener_inventario(filtro)  # Asegúrate de que este método exista y acepte un filtro
+
+        # Insertar los artículos filtrados en la tabla
+        for articulo in articulos:
+            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen si es necesario
+
+    def limpiar_campos_inventario(self):
+        # Limpiar campos de texto
+        for entry in self.campos_inventario.values():
+            entry.delete(0, tk.END)
+        
+        # Limpiar imagen
+        self.label_imagen.configure(image='')
+        self.label_imagen.image = None
+        self.ruta_imagen = None  # Importante: resetear la ruta de la imagen
+        
+        # Deseleccionar item en el TreeView si hay alguno seleccionado
+        if self.tree_inventario.selection():
+            self.tree_inventario.selection_remove(self.tree_inventario.selection())
+
+    def eliminar_articulo(self):
+        seleccion = self.tree_inventario.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione un artículo para eliminar")
+            return
+        
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar este artículo?"):
+            item = self.tree_inventario.item(seleccion[0])
+            id_articulo = item['values'][0]
+            
+            if self.db.eliminar_articulo(id_articulo):
+                messagebox.showinfo("Éxito", "Artículo eliminado correctamente")
+                self.limpiar_campos_inventario()
+                self.actualizar_lista_inventario()
+            else:
+                messagebox.showerror("Error", "No se pudo eliminar el artículo")
+
+    def actualizar_lista_transacciones(self):
+        # Limpiar el TreeView
+        for item in self.tree_transacciones.get_children():
+            self.tree_transacciones.delete(item)
+
+        # Obtener y mostrar las transacciones
+        transacciones = self.db.obtener_transacciones()  # Asegúrate de tener este método en tu clase GestionDB
+        for transaccion in transacciones:
+            # Formatear la fecha para mostrar solo el día (sin hora ni segundos)
+            fecha_formateada = transaccion[6].split(" ")[0]  # Suponiendo que la fecha está en el índice 6
+            self.tree_transacciones.insert('', 'end', values=(transaccion[0], transaccion[1], transaccion[2], transaccion[3], transaccion[4], transaccion[5], fecha_formateada))
+
+    def abrir_ventana_agregar_persona(self):
+        ventana = tk.Toplevel()
+        VentanaAgregarPersona(ventana, self)
+
+    def exportar_a_excel(self):
+        success, message = self.db.exportar_a_csv('personas')
+        messagebox.showinfo("Exportar a Excel", message)
+
+    def abrir_ventana_agregar_producto(self):
+        ventana = tk.Toplevel(self.root)
+        VentanaAgregarProducto(ventana, self)
+
+    def eliminar_transaccion(self):
+        seleccion = self.tree_transacciones.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione una transacción para eliminar")
+            return
+        
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar esta transacción?"):
+            item = self.tree_transacciones.item(seleccion[0])
+            id_transaccion = item['values'][0]  # Asumiendo que el ID es el primer valor
+            
+            if self.db.eliminar_transaccion(id_transaccion):
+                messagebox.showinfo("Éxito", "Transacción eliminada correctamente")
+                self.actualizar_lista_transacciones()  # Actualizar la lista de transacciones
+            else:
+                messagebox.showerror("Error", "No se pudo eliminar la transacción")
+
+    def abrir_ventana_editar_persona(self):
+        seleccion = self.tree_personas.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione una persona para editar")
+            return
+
+        item = self.tree_personas.item(seleccion[0])
+        valores = item['values'][1:]  # Ignorar el primer elemento (ID)
+
+        print("Valores seleccionados:", valores)  # Imprimir para depuración
+
+        # Crear la ventana de edición
+        ventana = tk.Toplevel()
+        VentanaEditarPersona(ventana, self, valores)
+
+    def abrir_ventana_fecha_entrega(self):
+        seleccion = self.tree_personas.selection()
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione una persona para establecer la fecha de entrega")
+            return
+
+        item = self.tree_personas.item(seleccion[0])
+        valores = item['values']
+        ventana = tk.Toplevel()
+        VentanaFechaEntrega(ventana, self, valores[0])  # Pasar el ID de la persona
+
+    def mostrar_todas_transacciones(self):
+        """Muestra todas las transacciones sin filtros"""
+        self.combo_tipo.set('')
+        self.combo_articulo.set('')
+        self.filtrar_fecha_var.set(True)
+        self.actualizar_lista_transacciones()
+
+    def filtrar_por_tipo(self, tipo):
+        """Filtra las transacciones por tipo (entrada/salida)"""
+        self.combo_tipo.set(tipo)
+        self.combo_articulo.set('')
+        self.filtrar_fecha_var.set(True)
+        self.filtrar_transacciones()
+
+    def filtrar_personas(self, event=None):
+        # Obtener valores de búsqueda
+        nombre = self.combobox_nombre.get().lower()  # Convertir a minúsculas
+        articulo = self.entry_buscar_articulo.get().lower()  # Convertir a minúsculas
+        municipio = self.combobox_municipio.get()  # Asegúrate de que esto esté definido
+        estado = self.combo_estado.get()
+
+        # Limpiar TreeView
+        for item in self.tree_personas.get_children():
+            self.tree_personas.delete(item)
+
+        # Obtener todas las personas
+        personas = self.db.obtener_personas()
+
+        # Filtrar personas
+        for persona in personas:
+            # Convertir valores a minúsculas para comparación
+            nombre_persona = str(persona[1]).lower()  # Convertir a minúsculas
+            articulo_persona = str(persona[2]).lower()  # Convertir a minúsculas
+            municipio_persona = str(persona[5])
+            fecha_entrega = persona[7]
+
+            # Determinar estado
+            estado_persona = "Entregado" if fecha_entrega and fecha_entrega not in ['None', '', 'Pendiente'] else "Pendiente"
+
+            # Aplicar filtros
+            mostrar = True
+            if nombre and not nombre_persona.startswith(nombre):  # Cambiado a startswith
+                mostrar = False
+            if articulo and articulo and not articulo_persona.startswith(articulo):  # Cambiado a startswith
+                mostrar = False
+            if municipio and municipio != municipio_persona:
+                mostrar = False
+            if estado != 'Todos' and estado != estado_persona:
+                mostrar = False
+
+            # Mostrar si pasa todos los filtros
+            if mostrar:
+                # Convertir None o '' a 'Pendiente' para la visualización
+                valores = list(persona)
+                valores[-1] = 'Pendiente' if not valores[-1] or valores[-1] in ['None', ''] else valores[-1]
+                self.tree_personas.insert('', 'end', values=valores)
+
+    def mostrar_menu_contextual(self, event):
+        """Muestra el menú contextual en la posición del clic"""
+        # Seleccionar el item bajo el cursor
+        item = self.tree_personas.identify_row(event.y)
+        if item:
+            # Seleccionar el item
+            self.tree_personas.selection_set(item)
+            # Mostrar el menú contextual
+            try:
+                self.menu_contextual.tk_popup(event.x_root, event.y_root)
+            finally:
+                self.menu_contextual.grab_release()
 
 # Para abrir la ventana de transacciones
 def abrir_ventana_transacciones(app, db):
