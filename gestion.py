@@ -6,31 +6,54 @@ from tkinter import messagebox
 import pandas as pd
 
 class GestionDB:
-    def __init__(self):
-        self.db_name = 'gestion_inventario.db'
+    def __init__(self, db_name):
+        self.db_name = db_name
+        self.conectar()
+
+    def conectar(self):
+        """Método para establecer la conexión con la base de datos"""
+        try:
+            self.conn = sqlite3.connect(self.db_name)
+            cursor = self.conn.cursor()
+            
+            # ... otras tablas ...
+
+            # Crear tabla de transacciones si no existe
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS transacciones (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id_articulo INTEGER,
+                    tipo TEXT,
+                    cantidad INTEGER,
+                    stock_anterior INTEGER,
+                    stock_posterior INTEGER,
+                    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (id_articulo) REFERENCES articulos(id)
+                )
+            ''')
+            
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error al inicializar la base de datos: {e}")
 
     # Funciones para gestión de personas
     def agregar_persona(self, nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute(''' 
             INSERT INTO personas (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega)
             VALUES (?, ?, ?, ?, ?, ?, ?) 
             ''', (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega))
             
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al agregar persona: {e}")
             return False
-        finally:
-            conexion.close()
 
     def obtener_personas(self, nombre=None, articulo=None, municipio=None):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             query = "SELECT * FROM personas WHERE 1=1"
             params = []
 
@@ -46,13 +69,13 @@ class GestionDB:
 
             cursor.execute(query, params)
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener personas: {e}")
+            return []
 
     def actualizar_persona(self, id, nombre=None, articulo=None, telefono=None, direccion=None, municipio=None, fecha_peticion=None, fecha_entrega=None):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             
             # Construir la consulta de actualización
             query = ''' 
@@ -70,18 +93,15 @@ class GestionDB:
             
             cursor.execute(query, (nombre, articulo, telefono, direccion, municipio, fecha_peticion, fecha_entrega, id))
             
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al actualizar persona: {e}")
             return False
-        finally:
-            conexion.close()
 
     def eliminar_persona(self, id):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             
             # Primero eliminamos la persona seleccionada
             cursor.execute('DELETE FROM personas WHERE id=?', (id,))
@@ -100,50 +120,44 @@ class GestionDB:
                 WHERE name = 'personas'
             ''')
             
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al eliminar persona: {e}")
             return False
-        finally:
-            conexion.close()
 
     # Funciones para gestión de inventario
     def agregar_articulo(self, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('''
-                INSERT INTO inventario (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso)
-                VALUES (?, ?, ?, ?, ?)
+            INSERT INTO inventario (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso)
+            VALUES (?, ?, ?, ?, ?)
             ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso))
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al agregar artículo: {e}")
             return False
-        finally:
-            conexion.close()
 
     def obtener_inventario(self, filtro=None):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             if filtro:
-                cursor.execute(''' 
+                cursor.execute('''
                 SELECT * FROM inventario 
-                WHERE nombre_articulo LIKE ? OR descripcion LIKE ? 
+                WHERE nombre_articulo LIKE ? OR descripcion LIKE ?
                 ''', (f'%{filtro}%', f'%{filtro}%'))
             else:
                 cursor.execute('SELECT * FROM inventario')
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener inventario: {e}")
+            return []
 
     def registrar_transaccion(self, id_articulo, tipo, cantidad):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
 
             # Obtener la cantidad actual del artículo
             cursor.execute('SELECT cantidad_disponible FROM inventario WHERE id=?', (id_articulo,))
@@ -159,23 +173,21 @@ class GestionDB:
 
             # Actualizar el inventario
             cursor.execute('UPDATE inventario SET cantidad_disponible=? WHERE id=?', (nueva_cantidad, id_articulo))
-            conexion.commit()
+            self.conn.commit()
 
             # Registrar la transacción con el stock actual
             cursor.execute('INSERT INTO transacciones (id_articulo, tipo, cantidad, fecha, stock_actual) VALUES (?, ?, ?, ?, ?)',
                            (id_articulo, tipo, cantidad, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), cantidad_actual))
-            conexion.commit()
+            self.conn.commit()
 
             return True
         except Exception as e:
             print(f"Error al registrar transacción: {e}")
             return False
-        finally:
-            conexion.close()
 
     def exportar_a_csv(self, tipo):
         try:
-            conexion = sqlite3.connect(self.db_name)
+            cursor = self.conn.cursor()
             
             if tipo == 'personas':
                 df = pd.read_sql_query('''
@@ -188,7 +200,7 @@ class GestionDB:
                         fecha_entrega as "Fecha Entrega"
                     FROM personas
                     ORDER BY nombre
-                ''', conexion)
+                ''', self.conn)
                 filename = 'Reporte_Personas.xlsx'
             else:
                 df = pd.read_sql_query('''
@@ -198,7 +210,7 @@ class GestionDB:
                         cantidad_disponible as "Cantidad"
                     FROM inventario
                     ORDER BY nombre_articulo
-                ''', conexion)
+                ''', self.conn)
                 filename = 'Reporte_Inventario.xlsx'
 
             # Crear un writer de Excel
@@ -241,22 +253,21 @@ class GestionDB:
         except Exception as e:
             return False, f"Error al exportar: {e}"
         finally:
-            conexion.close()
+            self.conn.close()
 
     def obtener_articulo(self, id):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('SELECT * FROM inventario WHERE id=?', (id,))
             return cursor.fetchone()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener artículo: {e}")
+            return None
 
     def actualizar_articulo(self, id_articulo, nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso):
         """Actualiza todos los campos de un artículo"""
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             
             cursor.execute('''
                 UPDATE inventario 
@@ -268,18 +279,15 @@ class GestionDB:
                 WHERE id = ?
             ''', (nombre_articulo, descripcion, cantidad_disponible, imagen, fecha_ingreso, id_articulo))
             
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al actualizar artículo: {e}")
             return False
-        finally:
-            conexion.close()
 
     def eliminar_articulo(self, id):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             
             # Primero eliminamos el artículo seleccionado
             cursor.execute('DELETE FROM inventario WHERE id=?', (id,))
@@ -298,29 +306,26 @@ class GestionDB:
                 WHERE name = 'inventario'
             ''')
             
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al eliminar artículo: {e}")
             return False
-        finally:
-            conexion.close()
 
     def buscar_articulos(self, filtro):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('''
                 SELECT * FROM inventario 
                 WHERE nombre_articulo LIKE ? OR descripcion LIKE ?
             ''', (f'%{filtro}%', f'%{filtro}%'))
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al buscar artículos: {e}")
+            return []
 
     def eliminar_columna_stock_minimo(self):
-        conexion = sqlite3.connect(self.db_name)
-        cursor = conexion.cursor()
+        cursor = self.conn.cursor()
         
         # Crear una nueva tabla sin la columna stock_minimo
         cursor.execute('''
@@ -346,79 +351,86 @@ class GestionDB:
         # Renombrar la nueva tabla
         cursor.execute('ALTER TABLE inventario_nueva RENAME TO inventario')
         
-        conexion.commit()
-        conexion.close()
+        self.conn.commit()
+        self.conn.close()
 
-    def obtener_transacciones(self):
+    def obtener_transacciones(self, id_articulo=None):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
-            cursor.execute('''
-                SELECT t.id, i.nombre_articulo AS articulo, t.tipo, t.cantidad, 
-                       t.stock_actual AS "stock sin transaccion", 
-                       (t.stock_actual + CASE WHEN t.tipo = 'entrada' THEN t.cantidad ELSE -t.cantidad END) AS "stock con transaccion", 
-                       t.fecha 
-                FROM transacciones t 
-                JOIN inventario i ON t.id_articulo = i.id
-            ''')
+            cursor = self.conn.cursor()
+            
+            if id_articulo:
+                cursor.execute('''
+                    SELECT t.id, t.id_articulo, t.tipo, t.cantidad, t.fecha, 
+                           t.stock_actual, i.nombre_articulo 
+                    FROM transacciones t
+                    JOIN inventario i ON t.id_articulo = i.id
+                    WHERE t.id_articulo = ?
+                    ORDER BY t.fecha DESC
+                ''', (id_articulo,))
+            else:
+                cursor.execute('''
+                    SELECT t.id, t.id_articulo, t.tipo, t.cantidad, t.fecha, 
+                           t.stock_actual, i.nombre_articulo 
+                    FROM transacciones t
+                    JOIN inventario i ON t.id_articulo = i.id
+                    ORDER BY t.fecha DESC
+                ''')
+            
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except Exception as e:
+            print(f"Error al obtener transacciones: {e}")
+            return []
 
     def obtener_cantidad_articulo(self, id_articulo):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('SELECT cantidad_disponible FROM inventario WHERE id=?', (id_articulo,))
             return cursor.fetchone()[0]
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener cantidad del artículo: {e}")
+            return None
 
     def agregar_columna_stock_actual(self):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('ALTER TABLE transacciones ADD COLUMN stock_actual INTEGER')
-            conexion.commit()
+            self.conn.commit()
         except Exception as e:
             print(f"Error al agregar columna: {e}")
-        finally:
-            conexion.close()
 
     def obtener_personas_por_fecha(self, fecha_desde, fecha_hasta):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute(''' 
                 SELECT * FROM personas 
                 WHERE fecha_peticion BETWEEN ? AND ?
             ''', (fecha_desde, fecha_hasta))
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener personas por fecha: {e}")
+            return []
 
     def obtener_nombres(self):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('SELECT DISTINCT nombre FROM personas')
             return [row[0] for row in cursor.fetchall()]
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener nombres: {e}")
+            return []
 
     def obtener_articulos(self):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('SELECT * FROM inventario')
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener artículos: {e}")
+            return []
 
     def obtener_transacciones_filtradas(self, tipo=None, fecha_desde=None, fecha_hasta=None, articulo=None):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             query = '''
                 SELECT t.id, i.nombre_articulo AS articulo, t.tipo, t.cantidad, 
                        t.stock_actual AS "stock sin transaccion", 
@@ -442,23 +454,23 @@ class GestionDB:
     
             cursor.execute(query, params)
             return cursor.fetchall()
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener transacciones filtradas: {e}")
+            return []
 
     def obtener_persona_por_id(self, id):
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             cursor.execute('SELECT * FROM personas WHERE id=?', (id,))
             return cursor.fetchone()  # Esto devolverá una tupla con todos los datos de la persona
-        finally:
-            conexion.close()
+        except sqlite3.Error as e:
+            print(f"Error al obtener persona por ID: {e}")
+            return None
 
     def actualizar_imagen_articulo(self, id_articulo, imagen):
         """Actualiza solo la imagen de un artículo"""
         try:
-            conexion = sqlite3.connect(self.db_name)
-            cursor = conexion.cursor()
+            cursor = self.conn.cursor()
             
             cursor.execute('''
                 UPDATE inventario 
@@ -466,10 +478,64 @@ class GestionDB:
                 WHERE id = ?
             ''', (imagen, id_articulo))
             
-            conexion.commit()
+            self.conn.commit()
             return True
         except Exception as e:
             print(f"Error al actualizar imagen: {e}")
             return False
-        finally:
-            conexion.close()
+
+    def cerrar_conexion(self):
+        """Método para cerrar la conexión de la base de datos"""
+        if hasattr(self, 'conn'):
+            self.conn.close()
+
+def crear_base_datos():
+    """Crea las tablas necesarias en la base de datos."""
+    conexion = sqlite3.connect('gestion_inventario.db')
+    cursor = conexion.cursor()
+
+    # Crear tabla inventario si no existe
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS inventario (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre_articulo TEXT NOT NULL,
+        descripcion TEXT,
+        cantidad_disponible INTEGER DEFAULT 0,
+        imagen TEXT,
+        fecha_ingreso DATE
+    )
+    ''')
+
+    # Crear tabla transacciones si no existe
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS transacciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id_articulo INTEGER,
+        tipo TEXT CHECK(tipo IN ('entrada', 'salida')),
+        cantidad INTEGER,
+        fecha TEXT,
+        stock_actual INTEGER,
+        FOREIGN KEY (id_articulo) REFERENCES inventario(id)
+    )
+    ''')
+
+    # Crear tabla personas si no existe
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS personas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT NOT NULL,
+        articulo TEXT,
+        telefono TEXT,
+        direccion TEXT,
+        municipio TEXT,
+        fecha_peticion TEXT,
+        fecha_entrega TEXT
+    )
+    ''')
+
+    conexion.commit()
+    conexion.close()
+
+if __name__ == '__main__':
+    crear_base_datos()
+    print("Base de datos y tablas creadas correctamente.")
