@@ -476,6 +476,21 @@ class Aplicacion:
         # Mostrar imagen por defecto inicialmente
         self.mostrar_imagen_por_defecto()
 
+        # Frame para el filtro de búsqueda
+        filtro_frame = ttk.Frame(self.tab_inventario)
+        filtro_frame.pack(fill='x', padx=10, pady=5)
+
+        # Etiqueta y campo de entrada para la búsqueda
+        tk.Label(filtro_frame, text="Buscar:").pack(side='left', padx=5)
+        self.entry_busqueda_inventario = tk.Entry(filtro_frame)
+        self.entry_busqueda_inventario.pack(side='left', fill='x', expand=True, padx=5)
+
+        # Botón de búsqueda
+        ttk.Button(filtro_frame, text="Buscar", command=self.buscar_articulos).pack(side='left', padx=5)
+
+        # Vincular la tecla Enter al campo de búsqueda
+        self.entry_busqueda_inventario.bind('<Return>', self.buscar_articulos)
+
     def cargar_detalles_articulo(self, event=None):
         """Carga los detalles del artículo seleccionado en los campos"""
         seleccion = self.tree_inventario.selection()
@@ -1114,16 +1129,18 @@ class Aplicacion:
 
     def buscar_articulos(self, event=None):
         """Filtra y muestra los artículos en inventario según el término de búsqueda."""
-        filtro = self.entry_busqueda_inventario.get().lower()  # Obtener el término de búsqueda en minúsculas
+        filtro = self.entry_busqueda_inventario.get().strip().lower()
+        
+        # Limpiar la tabla
         for item in self.tree_inventario.get_children():
-            self.tree_inventario.delete(item)  # Limpiar la tabla
+            self.tree_inventario.delete(item)
 
-        # Obtener los artículos filtrados de la base de datos
-        articulos = self.db.obtener_inventario(filtro)  # Asegúrate de que este método exista y acepte un filtro
+        # Obtener los artículos filtrados
+        articulos = self.db.obtener_inventario(filtro)
 
-        # Insertar los artículos filtrados en la tabla
+        # Insertar los artículos filtrados
         for articulo in articulos:
-            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen si es necesario
+            self.tree_inventario.insert('', 'end', values=articulo)
 
     def limpiar_campos_inventario(self):
         # Limpiar campos de texto
@@ -2089,19 +2106,6 @@ class VentanaEditarArticulo:
         except Exception as e:
             print(f"Error al mostrar imagen: {e}")
             self.mostrar_imagen_por_defecto()
-
-    def buscar_articulos(self, event=None):
-        """Filtra y muestra los artículos en inventario según el término de búsqueda."""
-        filtro = self.entry_busqueda_inventario.get().lower()  # Obtener el término de búsqueda en minúsculas
-        for item in self.tree_inventario.get_children():
-            self.tree_inventario.delete(item)  # Limpiar la tabla
-
-        # Obtener los artículos filtrados de la base de datos
-        articulos = self.db.obtener_inventario(filtro)  # Asegúrate de que este método exista y acepte un filtro
-
-        # Insertar los artículos filtrados en la tabla
-        for articulo in articulos:
-            self.tree_inventario.insert('', 'end', values=articulo[:-1])  # Excluir la ruta de la imagen si es necesario
 
     def limpiar_campos_inventario(self):
         # Limpiar campos de texto
