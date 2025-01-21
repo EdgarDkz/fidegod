@@ -5,6 +5,8 @@ import os
 from gestion import GestionDB
 from tkcalendar import DateEntry
 from datetime import datetime
+import shutil
+import time
 
 class ToolTip(object):
     def __init__(self, widget, text):
@@ -354,15 +356,15 @@ class Aplicacion:
         
         # Crear campos con sus etiquetas
         campos = [
-            ('Nombre:', 'nombre'),
-            ('Descripción:', 'descripcion'),
-            ('Cantidad:', 'cantidad'),
-            ('Fecha de Ingreso:', 'fecha')
+            ('Nombre:', 'entry_nombre'),
+            ('Descripción:', 'entry_descripcion'),
+            ('Cantidad:', 'entry_cantidad'), 
+            ('Fecha de Ingreso:', 'entry_fecha')
         ]
 
         for i, (label, campo) in enumerate(campos):
             ttk.Label(details_frame, text=label).grid(row=i, column=0, sticky='e', padx=5, pady=2)
-            if campo == 'fecha':
+            if campo == 'entry_fecha':
                 widget = DateEntry(details_frame, width=20, background='darkblue',
                                  foreground='white', borderwidth=2,
                                  date_pattern='yyyy-mm-dd')
@@ -372,21 +374,22 @@ class Aplicacion:
             self.campos_inventario[campo] = widget
 
         # Frame para la imagen
-        image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo")
-        image_frame.pack(fill='both', expand=True, padx=5, pady=5)
-
-        # Label para mostrar la imagen
-        self.label_imagen = ttk.Label(image_frame)
-        self.label_imagen.pack(pady=10)
-
-        # Botones para la imagen
-        btn_frame = ttk.Frame(image_frame)
-        btn_frame.pack(pady=5)
+        self.image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=10)
+        self.image_frame.pack(fill='both', expand=True, pady=5)
         
-        ttk.Button(btn_frame, text="Seleccionar Imagen", 
-                   command=self.seleccionar_imagen).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Eliminar Imagen", 
-                   command=self.eliminar_imagen).pack(side='left', padx=5)
+        # Label para mostrar la imagen
+        self.image_label = ttk.Label(self.image_frame)
+        self.image_label.pack(pady=10)
+        
+        # Frame para botones de imagen
+        image_buttons_frame = ttk.Frame(self.image_frame)
+        image_buttons_frame.pack(pady=5)
+        
+        # Botones para gestionar la imagen
+        ttk.Button(image_buttons_frame, text="Seleccionar Imagen",
+                  command=self.seleccionar_imagen).pack(side='left', padx=5)
+        ttk.Button(image_buttons_frame, text="Eliminar Imagen",
+                  command=self.eliminar_imagen).pack(side='left', padx=5)
 
         # Frame para los botones de acción
         button_frame = ttk.Frame(details_frame)
@@ -445,16 +448,58 @@ class Aplicacion:
         self.btn_eliminar.config(state='disabled')
 
         # Vincular la selección del TreeView para habilitar/deshabilitar botones
-        self.tree_inventario.bind('<<TreeviewSelect>>', self.on_treeview_select)
+        self.tree_inventario.bind('<<TreeviewSelect>>', self.cargar_detalles_articulo)
 
-    def on_treeview_select(self, event=None):
-        """Habilita/deshabilita botones según la selección"""
-        if self.tree_inventario.selection():
+        # Mostrar imagen por defecto inicialmente
+        self.mostrar_imagen_por_defecto()
+
+    def cargar_detalles_articulo(self, event=None):
+        """Carga los detalles del artículo seleccionado en los campos"""
+        seleccion = self.tree_inventario.selection()
+        if not seleccion:
+            return
+
+        # Obtener los valores del artículo seleccionado
+        item = self.tree_inventario.item(seleccion[0])
+        valores = item['values']
+
+        try:
+            # Limpiar campos actuales
+            for campo in self.campos_inventario.values():
+                if isinstance(campo, ttk.Entry):
+                    campo.delete(0, tk.END)
+                elif isinstance(campo, DateEntry):
+                    campo.set_date(datetime.now())
+
+            # Mapear los valores a los campos correspondientes
+            self.campos_inventario['entry_nombre'].insert(0, valores[1])  # Nombre
+            self.campos_inventario['entry_descripcion'].insert(0, valores[2])  # Descripción
+            self.campos_inventario['entry_cantidad'].insert(0, valores[3])  # Cantidad
+            
+            # Manejar la fecha
+            if valores[5]:  # Fecha de ingreso
+                try:
+                    fecha = datetime.strptime(valores[5], '%Y-%m-%d')
+                    self.campos_inventario['entry_fecha'].set_date(fecha)
+                except (ValueError, TypeError):
+                    self.campos_inventario['entry_fecha'].set_date(datetime.now())
+
+            # Manejar la imagen
+            ruta_imagen = valores[4]  # Asumiendo que la ruta de la imagen está en el índice 4
+            if ruta_imagen and ruta_imagen != 'None' and os.path.exists(ruta_imagen):
+                self.mostrar_imagen(ruta_imagen)
+                self.ruta_imagen = ruta_imagen  # Guardar la ruta actual
+            else:
+                self.mostrar_imagen_por_defecto()
+                self.ruta_imagen = None
+
+            # Habilitar botones de edición
             self.btn_actualizar.config(state='normal')
             self.btn_eliminar.config(state='normal')
-        else:
-            self.btn_actualizar.config(state='disabled')
-            self.btn_eliminar.config(state='disabled')
+
+        except Exception as e:
+            print(f"Error al cargar detalles del artículo: {e}")
+            messagebox.showerror("Error", "No se pudieron cargar los detalles del artículo")
 
     def mostrar_menu_contextual(self, event):
         """Muestra el menú contextual al hacer clic derecho"""
@@ -482,30 +527,29 @@ class Aplicacion:
             print("Eliminar artículo:", item['values'])
 
     def seleccionar_imagen(self):
-        """Permite seleccionar una nueva imagen para el artículo"""
-        seleccion = self.tree_inventario.selection()
-        if not seleccion:
-            messagebox.showwarning("Advertencia", "Por favor, seleccione un artículo primero")
-            return
-
+        """Permite seleccionar una nueva imagen"""
         file_path = filedialog.askopenfilename(
             filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
         )
-        
         if file_path:
-            try:
-                item = self.tree_inventario.item(seleccion[0])
-                id_articulo = item['values'][0]
-                
-                # Actualizar la imagen en la base de datos
-                if self.db.actualizar_imagen_articulo(id_articulo, file_path):
-                    self.mostrar_imagen(file_path)
-                    messagebox.showinfo("Éxito", "Imagen actualizada correctamente")
-                    self.actualizar_lista_inventario()
-                else:
-                    messagebox.showerror("Error", "No se pudo actualizar la imagen")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error al actualizar la imagen: {str(e)}")
+            # Crear directorio de imágenes si no existe
+            os.makedirs("imagenes", exist_ok=True)
+            
+            # Crear nombre de archivo único
+            extension = os.path.splitext(file_path)[1]
+            nuevo_nombre = f"imagenes/img_{int(time.time())}{extension}"
+            
+            # Copiar imagen al directorio de imágenes
+            shutil.copy2(file_path, nuevo_nombre)
+            
+            self.ruta_imagen = nuevo_nombre
+            self.mostrar_imagen(nuevo_nombre)
+
+    def eliminar_imagen(self):
+        """Elimina la imagen del artículo seleccionado"""
+        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
+            self.ruta_imagen = None
+            self.mostrar_imagen_por_defecto()
 
     def setup_transacciones_tab(self):
         # Estilo para los frames
@@ -870,28 +914,19 @@ class Aplicacion:
             self.tree_personas.selection_remove(self.tree_personas.selection())
 
 
-    def eliminar_imagen(self):
-        """Elimina la imagen del artículo seleccionado"""
-        seleccion = self.tree_inventario.selection()
-        if not seleccion:
-            messagebox.showwarning("Advertencia", "Por favor, seleccione un artículo primero")
-            return
-
-        if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
-            try:
-                item = self.tree_inventario.item(seleccion[0])
-                id_articulo = item['values'][0]
-                
-                # Actualizar la base de datos con None como imagen
-                if self.db.actualizar_imagen_articulo(id_articulo, None):
-                    self.label_imagen.configure(text="No hay imagen seleccionada")
-                    self.label_imagen.image = None
-                    messagebox.showinfo("Éxito", "Imagen eliminada correctamente")
-                    self.actualizar_lista_inventario()
-                else:
-                    messagebox.showerror("Error", "No se pudo eliminar la imagen")
-            except Exception as e:
-                messagebox.showerror("Error", f"Error al eliminar la imagen: {str(e)}")
+    def limpiar_campos_inventario(self):
+        # Limpiar campos de texto
+        for entry in self.campos_inventario.values():
+            entry.delete(0, tk.END)
+        
+        # Limpiar imagen
+        self.image_label.configure(image='')
+        self.image_label.image = None
+        self.ruta_imagen = None  # Importante: resetear la ruta de la imagen
+        
+        # Deseleccionar item en el TreeView si hay alguno seleccionado
+        if self.tree_inventario.selection():
+            self.tree_inventario.selection_remove(self.tree_inventario.selection())
 
     def agregar_articulo(self):
         valores = {campo: entry.get() for campo, entry in self.campos_inventario.items()}
@@ -962,24 +997,28 @@ class Aplicacion:
                 elif isinstance(campo, DateEntry):
                     campo.set_date(datetime.now())
 
-            # Llenar los campos con los valores del artículo
-            self.campos_inventario['nombre'].delete(0, tk.END)
-            self.campos_inventario['nombre'].insert(0, valores[1])  # Nombre del artículo
-            
-            self.campos_inventario['descripcion'].delete(0, tk.END)
-            self.campos_inventario['descripcion'].insert(0, valores[2])  # Descripción
-            
-            self.campos_inventario['cantidad'].delete(0, tk.END)
-            self.campos_inventario['cantidad'].insert(0, valores[3])  # Cantidad
-            
-            # Manejar la fecha
-            try:
-                fecha = datetime.strptime(valores[5], '%Y-%m-%d')  # Fecha de ingreso
-                self.campos_inventario['fecha'].set_date(fecha)
-            except (ValueError, TypeError):
-                self.campos_inventario['fecha'].set_date(datetime.now())
+            # Mapear los valores a los campos correspondientes
+            mapeo_campos = {
+                'nombre': valores[1],       # Nombre del artículo
+                'descripcion': valores[2],  # Descripción
+                'cantidad': valores[3],     # Cantidad
+                'fecha': valores[5]         # Fecha de ingreso
+            }
 
-            # Mostrar imagen
+            # Llenar los campos con los valores del artículo
+            for campo, valor in mapeo_campos.items():
+                if campo in self.campos_inventario:
+                    if isinstance(self.campos_inventario[campo], DateEntry):
+                        try:
+                            fecha = datetime.strptime(valor, '%Y-%m-%d')
+                            self.campos_inventario[campo].set_date(fecha)
+                        except (ValueError, TypeError):
+                            self.campos_inventario[campo].set_date(datetime.now())
+                    else:
+                        self.campos_inventario[campo].delete(0, tk.END)
+                        self.campos_inventario[campo].insert(0, str(valor))
+
+            # Mostrar imagen si existe
             ruta_imagen = valores[4]  # Ruta de la imagen
             if ruta_imagen and ruta_imagen != 'None' and os.path.exists(ruta_imagen):
                 self.mostrar_imagen(ruta_imagen)
@@ -988,53 +1027,66 @@ class Aplicacion:
 
     def mostrar_imagen_por_defecto(self):
         """Muestra una imagen por defecto cuando no hay imagen disponible"""
-        imagen = Image.new('RGB', (200, 200), 'lightgray')
-        draw = ImageDraw.Draw(imagen)
-        texto = "No hay imagen"
         try:
-            fuente = ImageFont.truetype("arial.ttf", 20)
-        except:
-            fuente = ImageFont.load_default()
-        
-        # Centrar el texto
-        bbox = draw.textbbox((0, 0), texto, font=fuente)
-        w = bbox[2] - bbox[0]
-        h = bbox[3] - bbox[1]
-        x = (200 - w) / 2
-        y = (200 - h) / 2
-        
-        draw.text((x, y), texto, fill='black', font=fuente)
-        foto = ImageTk.PhotoImage(imagen)
-        self.label_imagen.configure(image=foto)
-        self.label_imagen.image = foto
+            # Crear imagen en blanco
+            imagen = Image.new('RGB', (300, 300), '#f0f0f0')
+            draw = ImageDraw.Draw(imagen)
+            
+            # Texto para mostrar
+            texto = "No hay imagen\ndisponible"
+            try:
+                fuente = ImageFont.truetype("arial.ttf", 24)
+            except:
+                fuente = ImageFont.load_default()
+            
+            # Centrar texto
+            bbox = draw.textbbox((0, 0), texto, font=fuente)
+            w = bbox[2] - bbox[0]
+            h = bbox[3] - bbox[1]
+            x = (300 - w) / 2
+            y = (300 - h) / 2
+            
+            # Dibujar texto
+            draw.text((x, y), texto, fill='#666666', font=fuente)
+            
+            # Mostrar imagen
+            foto = ImageTk.PhotoImage(imagen)
+            self.image_label.configure(image=foto)
+            self.image_label.image = foto  # Mantener referencia
+        except Exception as e:
+            print(f"Error al mostrar imagen por defecto: {e}")
+            self.image_label.configure(text="No hay imagen disponible")
 
     def mostrar_imagen(self, ruta_imagen):
         """Muestra la imagen en el label de imagen"""
         try:
-            # Abrir y redimensionar la imagen
             imagen = Image.open(ruta_imagen)
-            # Mantener la proporción de la imagen
-            ancho = 200
-            alto = 200
-            proporcion = min(ancho/float(imagen.size[0]), alto/float(imagen.size[1]))
-            nuevo_ancho = int(imagen.size[0] * proporcion)
-            nuevo_alto = int(imagen.size[1] * proporcion)
+            
+            # Dimensiones máximas para la imagen
+            ancho_max = 300
+            alto_max = 300
+            
+            # Mantener proporción de aspecto
+            ratio = min(ancho_max/imagen.width, alto_max/imagen.height)
+            nuevo_ancho = int(imagen.width * ratio)
+            nuevo_alto = int(imagen.height * ratio)
             
             imagen = imagen.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
             
-            # Crear una imagen en blanco del tamaño deseado
-            imagen_fondo = Image.new('RGB', (ancho, alto), 'white')
-            # Calcular la posición para centrar la imagen
-            x = (ancho - nuevo_ancho) // 2
-            y = (alto - nuevo_alto) // 2
-            # Pegar la imagen redimensionada en el centro
+            # Crear fondo blanco del tamaño máximo
+            imagen_fondo = Image.new('RGB', (ancho_max, alto_max), 'white')
+            x = (ancho_max - nuevo_ancho) // 2
+            y = (alto_max - nuevo_alto) // 2
+            
+            # Pegar la imagen centrada
             imagen_fondo.paste(imagen, (x, y))
             
+            # Convertir y mostrar
             foto = ImageTk.PhotoImage(imagen_fondo)
-            self.label_imagen.configure(image=foto)
-            self.label_imagen.image = foto
+            self.image_label.configure(image=foto)
+            self.image_label.image = foto  # Mantener referencia
         except Exception as e:
-            print(f"Error al cargar la imagen: {e}")
+            print(f"Error al mostrar imagen: {e}")
             self.mostrar_imagen_por_defecto()
 
     def buscar_articulos(self, event=None):
@@ -1056,8 +1108,8 @@ class Aplicacion:
             entry.delete(0, tk.END)
         
         # Limpiar imagen
-        self.label_imagen.configure(image='')
-        self.label_imagen.image = None
+        self.image_label.configure(image='')
+        self.image_label.image = None
         self.ruta_imagen = None  # Importante: resetear la ruta de la imagen
         
         # Deseleccionar item en el TreeView si hay alguno seleccionado
@@ -1904,13 +1956,11 @@ class VentanaEditarArticulo:
     def actualizar_articulo(self):
         """Actualiza el artículo con los nuevos datos"""
         try:
-            # Obtener valores de los campos
             nombre = self.campos['nombre'].get()
             descripcion = self.campos['descripcion'].get()
             cantidad = self.campos['cantidad'].get()
             fecha = self.campos['fecha'].get()
             
-            # Validaciones
             if not nombre or not cantidad:
                 messagebox.showwarning("Advertencia", "Nombre y cantidad son campos obligatorios.")
                 return
@@ -1921,17 +1971,16 @@ class VentanaEditarArticulo:
                 messagebox.showwarning("Error", "La cantidad debe ser un número entero.")
                 return
             
-            # Actualizar en la base de datos
             if self.app.db.actualizar_articulo(
-                self.articulo[0],  # ID
+                self.articulo[0],
                 nombre,
                 descripcion,
                 cantidad,
-                self.ruta_imagen,  # Usar la ruta de imagen actualizada
+                self.ruta_imagen,
                 fecha
             ):
                 messagebox.showinfo("Éxito", "Artículo actualizado correctamente")
-                self.app.actualizar_lista_inventario()  # Actualizar la lista en la ventana principal
+                self.app.actualizar_lista_inventario()
                 self.master.destroy()
             else:
                 messagebox.showerror("Error", "No se pudo actualizar el artículo")
@@ -1958,13 +2007,13 @@ class VentanaEditarArticulo:
         """Muestra una imagen por defecto cuando no hay imagen disponible"""
         try:
             # Crear imagen en blanco
-            imagen = Image.new('RGB', (200, 200), 'lightgray')
+            imagen = Image.new('RGB', (300, 300), '#f0f0f0')
             draw = ImageDraw.Draw(imagen)
             
-            # Configurar texto
-            texto = "No hay imagen"
+            # Texto para mostrar
+            texto = "No hay imagen\ndisponible"
             try:
-                fuente = ImageFont.truetype("arial.ttf", 20)
+                fuente = ImageFont.truetype("arial.ttf", 24)
             except:
                 fuente = ImageFont.load_default()
             
@@ -1972,16 +2021,16 @@ class VentanaEditarArticulo:
             bbox = draw.textbbox((0, 0), texto, font=fuente)
             w = bbox[2] - bbox[0]
             h = bbox[3] - bbox[1]
-            x = (200 - w) / 2
-            y = (200 - h) / 2
+            x = (300 - w) / 2
+            y = (300 - h) / 2
             
             # Dibujar texto
-            draw.text((x, y), texto, fill='black', font=fuente)
+            draw.text((x, y), texto, fill='#666666', font=fuente)
             
             # Mostrar imagen
             foto = ImageTk.PhotoImage(imagen)
             self.image_label.configure(image=foto)
-            self.image_label.image = foto
+            self.image_label.image = foto  # Mantener referencia
         except Exception as e:
             print(f"Error al mostrar imagen por defecto: {e}")
             self.image_label.configure(text="No hay imagen disponible")
@@ -1989,30 +2038,28 @@ class VentanaEditarArticulo:
     def mostrar_imagen(self, ruta_imagen):
         """Muestra la imagen en el label de imagen"""
         try:
-            # Abrir y redimensionar la imagen
             imagen = Image.open(ruta_imagen)
             
-            # Calcular nuevas dimensiones manteniendo la proporción
-            ancho_max = 200
-            alto_max = 200
+            # Dimensiones máximas para la imagen
+            ancho_max = 300
+            alto_max = 300
+            
+            # Mantener proporción de aspecto
             ratio = min(ancho_max/imagen.width, alto_max/imagen.height)
             nuevo_ancho = int(imagen.width * ratio)
             nuevo_alto = int(imagen.height * ratio)
             
-            # Redimensionar la imagen
             imagen = imagen.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
             
-            # Crear imagen de fondo
+            # Crear fondo blanco del tamaño máximo
             imagen_fondo = Image.new('RGB', (ancho_max, alto_max), 'white')
-            
-            # Calcular posición para centrar
             x = (ancho_max - nuevo_ancho) // 2
             y = (alto_max - nuevo_alto) // 2
             
-            # Pegar imagen redimensionada en el fondo
+            # Pegar la imagen centrada
             imagen_fondo.paste(imagen, (x, y))
             
-            # Convertir a PhotoImage y mostrar
+            # Convertir y mostrar
             foto = ImageTk.PhotoImage(imagen_fondo)
             self.image_label.configure(image=foto)
             self.image_label.image = foto  # Mantener referencia
@@ -2039,8 +2086,8 @@ class VentanaEditarArticulo:
             entry.delete(0, tk.END)
         
         # Limpiar imagen
-        self.label_imagen.configure(image='')
-        self.label_imagen.image = None
+        self.image_label.configure(image='')
+        self.image_label.image = None
         self.ruta_imagen = None  # Importante: resetear la ruta de la imagen
         
         # Deseleccionar item en el TreeView si hay alguno seleccionado
