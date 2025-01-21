@@ -347,13 +347,22 @@ class Aplicacion:
         right_panel = ttk.Frame(main_frame)
         right_panel.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
         
-        # Frame para detalles
-        details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=10)
-        details_frame.pack(fill='x', pady=(0, 5))
-        
+        # Frame para detalles con estilo minimalista
+        details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=15)
+        details_frame.pack(fill='x', pady=(0, 10))
+
         # Definir los campos de entrada
         self.campos_inventario = {}
-        
+
+        # Configurar estilo minimalista
+        style = ttk.Style()
+        style.configure('Minimal.TLabel', font=('Helvetica', 10))
+        style.configure('Minimal.TEntry', padding=5)
+        style.configure('Minimal.DateEntry', padding=5)
+        style.configure('Minimal.TButton', 
+                       font=('Helvetica', 9),
+                       padding=8)
+
         # Crear campos con sus etiquetas
         campos = [
             ('Nombre:', 'entry_nombre'),
@@ -363,33 +372,47 @@ class Aplicacion:
         ]
 
         for i, (label, campo) in enumerate(campos):
-            ttk.Label(details_frame, text=label).grid(row=i, column=0, sticky='e', padx=5, pady=2)
+            # Frame para cada campo para mejor alineación
+            field_frame = ttk.Frame(details_frame)
+            field_frame.grid(row=i, column=0, sticky='ew', pady=3)
+            field_frame.grid_columnconfigure(1, weight=1)
+            
+            ttk.Label(field_frame, text=label, style='Minimal.TLabel').grid(row=0, column=0, padx=(0,10), sticky='e')
+            
             if campo == 'entry_fecha':
-                widget = DateEntry(details_frame, width=20, background='darkblue',
-                                 foreground='white', borderwidth=2,
-                                 date_pattern='yyyy-mm-dd')
+                widget = DateEntry(field_frame, 
+                                 width=25,
+                                 background='white',
+                                 foreground='black',
+                                 borderwidth=1,
+                                 date_pattern='yyyy-mm-dd',
+                                 style='Minimal.DateEntry')
             else:
-                widget = ttk.Entry(details_frame, width=30)
-            widget.grid(row=i, column=1, sticky='w', padx=5, pady=2)
+                widget = ttk.Entry(field_frame, width=30, style='Minimal.TEntry')
+            widget.grid(row=0, column=1, sticky='ew')
             self.campos_inventario[campo] = widget
 
-        # Frame para la imagen
-        self.image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=10)
-        self.image_frame.pack(fill='both', expand=True, pady=5)
-        
+        # Frame para la imagen con estilo minimalista
+        self.image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=15)
+        self.image_frame.pack(fill='both', expand=True, pady=10)
+
         # Label para mostrar la imagen
         self.image_label = ttk.Label(self.image_frame)
-        self.image_label.pack(pady=10)
-        
+        self.image_label.pack(pady=15)
+
         # Frame para botones de imagen
         image_buttons_frame = ttk.Frame(self.image_frame)
-        image_buttons_frame.pack(pady=5)
-        
-        # Botones para gestionar la imagen
-        ttk.Button(image_buttons_frame, text="Seleccionar Imagen",
-                  command=self.seleccionar_imagen).pack(side='left', padx=5)
-        ttk.Button(image_buttons_frame, text="Eliminar Imagen",
-                  command=self.eliminar_imagen).pack(side='left', padx=5)
+        image_buttons_frame.pack(pady=10)
+
+        # Botones con estilo minimalista
+        ttk.Button(image_buttons_frame, 
+                  text="Seleccionar Imagen",
+                  style='Minimal.TButton',
+                  command=self.seleccionar_imagen).pack(side='left', padx=8)
+        ttk.Button(image_buttons_frame, 
+                  text="Eliminar Imagen",
+                  style='Minimal.TButton',
+                  command=self.eliminar_imagen).pack(side='left', padx=8)
 
         # Frame para los botones de acción
         button_frame = ttk.Frame(details_frame)
