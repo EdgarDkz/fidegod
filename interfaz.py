@@ -481,7 +481,7 @@ class Aplicacion:
         filtro_frame.pack(fill='x', padx=10, pady=5)
 
         # Etiqueta y campo de entrada para la búsqueda
-        tk.Label(filtro_frame, text="Buscar:").pack(side='left', padx=5)
+        tk.Label(filtro_frame, text="Buscardasasd:").pack(side='left', padx=5)
         self.entry_busqueda_inventario = tk.Entry(filtro_frame)
         self.entry_busqueda_inventario.pack(side='left', fill='x', expand=True, padx=5)
 
@@ -1186,10 +1186,10 @@ class Aplicacion:
             id_articulo = item['values'][0]
             
             # Obtener los valores de los campos
-            nombre = self.campos_inventario['nombre'].get()
-            descripcion = self.campos_inventario['descripcion'].get()
-            cantidad = self.campos_inventario['cantidad'].get()
-            fecha = self.campos_inventario['fecha'].get()
+            nombre = self.campos_inventario['entry_nombre'].get()
+            descripcion = self.campos_inventario['entry_descripcion'].get()
+            cantidad = self.campos_inventario['entry_cantidad'].get()
+            fecha = self.campos_inventario['entry_fecha'].get()
             
             # Validar campos obligatorios
             if not nombre or not cantidad:
