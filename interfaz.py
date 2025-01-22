@@ -482,6 +482,12 @@ class Aplicacion:
         filtro_frame = ttk.Frame(self.tab_inventario)
         filtro_frame.pack(fill='x', padx=10, pady=5)
 
+        # Mover el frame de búsqueda debajo del TreeView
+        search_frame.pack_forget()
+        search_frame.pack(fill='x', side='bottom', pady=5, padx=5)
+
+        # Vincular el evento de redimensionamiento al TreeView
+        self.tree_inventario.bind('<Configure>', self.on_window_resize)
 
     def cargar_detalles_articulo(self, event=None):
         """Carga los detalles del artículo seleccionado en los campos"""
@@ -557,29 +563,89 @@ class Aplicacion:
             print("Eliminar artículo:", item['values'])
 
     def seleccionar_imagen(self):
-        """Permite seleccionar una nueva imagen"""
+        """Permite seleccionar una nueva imagen y muestra un botón para confirmar el cambio."""
         file_path = filedialog.askopenfilename(
             filetypes=[("Imágenes", "*.png *.jpg *.jpeg *.gif *.bmp")]
         )
         if file_path:
-            # Crear directorio de imágenes si no existe
-            os.makedirs("imagenes", exist_ok=True)
-            
-            # Crear nombre de archivo único
-            extension = os.path.splitext(file_path)[1]
-            nuevo_nombre = f"imagenes/img_{int(time.time())}{extension}"
-            
-            # Copiar imagen al directorio de imágenes
-            shutil.copy2(file_path, nuevo_nombre)
-            
-            self.ruta_imagen = nuevo_nombre
-            self.mostrar_imagen(nuevo_nombre)
+            try:
+                # Crear directorio de imágenes si no existe
+                os.makedirs("imagenes", exist_ok=True)
+                
+                # Crear nombre de archivo único
+                extension = os.path.splitext(file_path)[1]
+                nuevo_nombre = f"imagenes/img_{int(time.time())}{extension}"
+                
+                # Copiar imagen al directorio de imágenes
+                shutil.copy2(file_path, nuevo_nombre)
+                
+                # Actualizar la imagen en la interfaz
+                self.ruta_imagen = nuevo_nombre
+                self.mostrar_imagen(nuevo_nombre)
+                
+                # Mostrar botón de confirmación
+                self.mostrar_boton_confirmacion()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"No se pudo actualizar la imagen: {e}")
 
     def eliminar_imagen(self):
-        """Elimina la imagen del artículo seleccionado"""
+        """Elimina la imagen del artículo seleccionado y muestra un botón para confirmar el cambio."""
         if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
             self.ruta_imagen = None
             self.mostrar_imagen_por_defecto()
+            # Mostrar botón de confirmación
+            self.mostrar_boton_confirmacion()
+
+    def mostrar_boton_confirmacion(self):
+        """Muestra un botón para confirmar los cambios de imagen."""
+        if not hasattr(self, 'btn_confirmar'):
+            self.btn_confirmar = ttk.Button(self.image_frame, text="Confirmar Cambios", command=self.confirmar_cambios_imagen)
+        self.btn_confirmar.pack(pady=5)
+
+    def confirmar_cambios_imagen(self):
+        """Confirma los cambios de imagen, actualiza la base de datos y la lista de inventario."""
+        try:
+            seleccion = self.tree_inventario.selection()
+            if not seleccion:
+                messagebox.showwarning("Error", "Seleccione un artículo para actualizar la imagen")
+                return
+
+            # Obtener el ID del artículo seleccionado
+            item = self.tree_inventario.item(seleccion[0])
+            id_articulo = item['values'][0]
+
+            # Actualizar la imagen en la base de datos
+            if self.db.actualizar_imagen_articulo(id_articulo, self.ruta_imagen):
+                messagebox.showinfo("Éxito", "Imagen del artículo actualizada en la base de datos.")
+                self.actualizar_lista_inventario()  # Actualizar la lista de inventario
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar la imagen en la base de datos.")
+
+            # Ocultar el botón de confirmación
+            self.btn_confirmar.pack_forget()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al confirmar los cambios de imagen: {e}")
+
+    def actualizar_lista_inventario(self):
+        """Actualiza la lista de inventario en la interfaz."""
+        # Limpiar el TreeView
+        for item in self.tree_inventario.get_children():
+            self.tree_inventario.delete(item)
+
+        # Obtener y mostrar los artículos actualizados
+        articulos = self.db.obtener_inventario()
+        for articulo in articulos:
+            self.tree_inventario.insert('', 'end', values=articulo)
+
+    def on_window_resize(self, event):
+        """Ajusta el ancho de las columnas del TreeView cuando se redimensiona la ventana."""
+        if event.widget == self.tree_inventario:
+            total_width = event.width
+            column_widths = [int(total_width * 0.1), int(total_width * 0.2), int(total_width * 0.2), int(total_width * 0.1), int(total_width * 0.2), int(total_width * 0.2)]
+            for col, width in zip(self.tree_inventario['columns'], column_widths):
+                self.tree_inventario.column(col, width=width)
 
     def setup_transacciones_tab(self):
         # Estilo para los frames
@@ -2074,12 +2140,14 @@ class VentanaEditarArticulo:
         if file_path:
             self.ruta_imagen = file_path
             self.mostrar_imagen(file_path)
+            self.mostrar_boton_confirmacion()
 
     def eliminar_imagen(self):
         """Elimina la imagen seleccionada"""
         if messagebox.askyesno("Confirmar", "¿Está seguro de eliminar la imagen?"):
             self.ruta_imagen = None
             self.mostrar_imagen_por_defecto()
+            self.mostrar_boton_confirmacion()
 
     def mostrar_imagen_por_defecto(self):
         """Muestra una imagen por defecto cuando no hay imagen disponible"""
@@ -2144,6 +2212,56 @@ class VentanaEditarArticulo:
         except Exception as e:
             print(f"Error al mostrar imagen: {e}")
             self.mostrar_imagen_por_defecto()
+
+    def mostrar_boton_confirmacion(self):
+        """Muestra un botón para confirmar los cambios de imagen."""
+        if not hasattr(self, 'btn_confirmar'):
+            self.btn_confirmar = ttk.Button(self.image_frame, text="Confirmar Cambios", command=self.confirmar_cambios_imagen)
+        self.btn_confirmar.pack(pady=5)
+
+    def confirmar_cambios_imagen(self):
+        """Confirma los cambios de imagen, actualiza la base de datos y la lista de inventario."""
+        try:
+            seleccion = self.tree_inventario.selection()
+            if not seleccion:
+                messagebox.showwarning("Error", "Seleccione un artículo para actualizar la imagen")
+                return
+
+            # Obtener el ID del artículo seleccionado
+            item = self.tree_inventario.item(seleccion[0])
+            id_articulo = item['values'][0]
+
+            # Actualizar la imagen en la base de datos
+            if self.db.actualizar_imagen_articulo(id_articulo, self.ruta_imagen):
+                messagebox.showinfo("Éxito", "Imagen del artículo actualizada en la base de datos.")
+                self.actualizar_lista_inventario()  # Actualizar la lista de inventario
+            else:
+                messagebox.showerror("Error", "No se pudo actualizar la imagen en la base de datos.")
+
+            # Ocultar el botón de confirmación
+            self.btn_confirmar.pack_forget()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al confirmar los cambios de imagen: {e}")
+
+    def actualizar_lista_inventario(self):
+        """Actualiza la lista de inventario en la interfaz."""
+        # Limpiar el TreeView
+        for item in self.tree_inventario.get_children():
+            self.tree_inventario.delete(item)
+
+        # Obtener y mostrar los artículos actualizados
+        articulos = self.db.obtener_inventario()
+        for articulo in articulos:
+            self.tree_inventario.insert('', 'end', values=articulo)
+
+    def on_window_resize(self, event):
+        """Ajusta el ancho de las columnas del TreeView cuando se redimensiona la ventana."""
+        if event.widget == self.tree_inventario:
+            total_width = event.width
+            column_widths = [int(total_width * 0.1), int(total_width * 0.2), int(total_width * 0.2), int(total_width * 0.1), int(total_width * 0.2), int(total_width * 0.2)]
+            for col, width in zip(self.tree_inventario['columns'], column_widths):
+                self.tree_inventario.column(col, width=width)
 
     def limpiar_campos_inventario(self):
         # Limpiar campos de texto
