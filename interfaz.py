@@ -294,13 +294,15 @@ class Aplicacion:
         self.entry_busqueda = ttk.Entry(search_frame)
         self.entry_busqueda.pack(side='left', fill='x', expand=True, padx=5)
         
+        # Botón de búsqueda
+        ttk.Button(search_frame, text="Buscar", command=self.buscar_articulos).pack(side='left', padx=5)
+
+        # Vincular la tecla Enter al campo de búsqueda
+        self.entry_busqueda.bind('<Return>', lambda event: self.buscar_articulos())
+        
         # Botones con estilo
         style = ttk.Style()
         style.configure('Accent.TButton', background='#4CAF50')
-        
-        ttk.Button(search_frame, text="Buscar", 
-                   command=self.buscar_articulos,
-                   style='Accent.TButton').pack(side='left', padx=5)
         
         ttk.Button(search_frame, text="Agregar Producto", 
                    command=self.abrir_ventana_agregar_producto,
@@ -480,16 +482,6 @@ class Aplicacion:
         filtro_frame = ttk.Frame(self.tab_inventario)
         filtro_frame.pack(fill='x', padx=10, pady=5)
 
-        # Etiqueta y campo de entrada para la búsqueda
-        tk.Label(filtro_frame, text="Buscardasasd:").pack(side='left', padx=5)
-        self.entry_busqueda_inventario = tk.Entry(filtro_frame)
-        self.entry_busqueda_inventario.pack(side='left', fill='x', expand=True, padx=5)
-
-        # Botón de búsqueda
-        ttk.Button(filtro_frame, text="Buscar", command=self.buscar_articulos).pack(side='left', padx=5)
-
-        # Vincular la tecla Enter al campo de búsqueda
-        self.entry_busqueda_inventario.bind('<Return>', self.buscar_articulos)
 
     def cargar_detalles_articulo(self, event=None):
         """Carga los detalles del artículo seleccionado en los campos"""
@@ -665,6 +657,10 @@ class Aplicacion:
         # Frame para el TreeView
         tree_frame = ttk.Frame(main_frame)
         tree_frame.pack(fill='both', expand=True, pady=5)
+        
+        # Configurar el tree_frame para que se expanda
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
 
         # Configurar las columnas del TreeView de transacciones
         self.tree_transacciones = ttk.Treeview(
@@ -682,25 +678,65 @@ class Aplicacion:
         self.tree_transacciones.heading('Stock con Transaccion', text='Stock con Transacción')
         self.tree_transacciones.heading('Fecha', text='Fecha')
 
-        # Configurar anchos de columna
-        self.tree_transacciones.column('ID', width=50)
-        self.tree_transacciones.column('Articulo', width=150)
-        self.tree_transacciones.column('Tipo', width=100)
-        self.tree_transacciones.column('Cantidad', width=100)
-        self.tree_transacciones.column('Stock sin Transaccion', width=150)
-        self.tree_transacciones.column('Stock con Transaccion', width=150)
-        self.tree_transacciones.column('Fecha', width=150)
+        # Configurar anchos de columna relativos
+        total_width = tree_frame.winfo_width()
+        self.tree_transacciones.column('ID', width=50, minwidth=50)
+        self.tree_transacciones.column('Articulo', width=150, minwidth=100)
+        self.tree_transacciones.column('Tipo', width=100, minwidth=80)
+        self.tree_transacciones.column('Cantidad', width=100, minwidth=80)
+        self.tree_transacciones.column('Stock sin Transaccion', width=150, minwidth=120)
+        self.tree_transacciones.column('Stock con Transaccion', width=150, minwidth=120)
+        self.tree_transacciones.column('Fecha', width=150, minwidth=100)
 
-        # Agregar scrollbar
-        scrollbar = ttk.Scrollbar(tree_frame, orient='vertical', 
-                                 command=self.tree_transacciones.yview)
-        scrollbar.pack(side='right', fill='y')
-        self.tree_transacciones.configure(yscrollcommand=scrollbar.set)
-        self.tree_transacciones.pack(fill='both', expand=True)
+        # Agregar scrollbars
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree_transacciones.yview)
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree_transacciones.xview)
+        self.tree_transacciones.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        # Grid layout para el TreeView y scrollbars
+        self.tree_transacciones.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+
+        # Frame para la barra de búsqueda (fijo en la parte inferior)
+        search_frame = ttk.Frame(main_frame)
+        search_frame.pack(fill='x', side='bottom', pady=5, padx=5)
+
+        # Barra de búsqueda
+        ttk.Label(search_frame, text="Buscar:").pack(side='left', padx=(5, 2))
+        self.search_entry = ttk.Entry(search_frame)
+        self.search_entry.pack(side='left', fill='x', expand=True, padx=2)
+        ttk.Button(search_frame, text="Buscar", 
+                  command=self.buscar_articulos).pack(side='left', padx=2)
 
         # Cargar datos iniciales
         self.cargar_articulos_unicos()
         self.actualizar_lista_transacciones()
+
+        # Vincular evento de redimensionamiento al tree_frame en lugar del master
+        self.tree_transacciones.bind('<Configure>', self.on_window_resize)
+
+    def on_window_resize(self, event):
+        """Ajusta las columnas del TreeView cuando se redimensiona la ventana"""
+        if event.widget == self.tree_transacciones:  # Verificar que el evento viene del TreeView
+            # Obtener el ancho total disponible
+            tree_width = event.width  # Usar el ancho del evento
+            
+            # Calcular anchos relativos (total = 100%)
+            widths = {
+                'ID': 5,            # 5%
+                'Articulo': 20,     # 20%
+                'Tipo': 10,         # 10%
+                'Cantidad': 10,     # 10%
+                'Stock sin Transaccion': 20,  # 20%
+                'Stock con Transaccion': 20,  # 20%
+                'Fecha': 15         # 15%
+            }
+            
+            # Ajustar el ancho de cada columna
+            for column, percentage in widths.items():
+                width = int(tree_width * (percentage / 100))
+                self.tree_transacciones.column(column, width=width, minwidth=50)
 
     def cargar_articulos_unicos(self):
         # Obtener artículos de la base de datos
@@ -1127,20 +1163,22 @@ class Aplicacion:
             print(f"Error al mostrar imagen: {e}")
             self.mostrar_imagen_por_defecto()
 
-    def buscar_articulos(self, event=None):
+    def buscar_articulos(self):
         """Filtra y muestra los artículos en inventario según el término de búsqueda."""
-        filtro = self.entry_busqueda_inventario.get().strip().lower()
+        filtro = self.entry_busqueda.get().strip().lower()
         
         # Limpiar la tabla
         for item in self.tree_inventario.get_children():
             self.tree_inventario.delete(item)
 
         # Obtener los artículos filtrados
-        articulos = self.db.obtener_inventario(filtro)
+        articulos = self.db.obtener_inventario()
 
-        # Insertar los artículos filtrados
+        # Insertar los artículos que comienzan con el filtro
         for articulo in articulos:
-            self.tree_inventario.insert('', 'end', values=articulo)
+            nombre_articulo = articulo[1].lower()  # Suponiendo que el nombre del artículo está en la segunda columna
+            if nombre_articulo.startswith(filtro):
+                self.tree_inventario.insert('', 'end', values=articulo)
 
     def limpiar_campos_inventario(self):
         # Limpiar campos de texto
