@@ -73,10 +73,12 @@ class Aplicacion:
         self.tab_personas = ttk.Frame(self.notebook)
         self.tab_inventario = ttk.Frame(self.notebook)
         self.tab_transacciones = ttk.Frame(self.notebook)
+        self.tab_movimientos = ttk.Frame(self.notebook)
         
         self.notebook.add(self.tab_personas, text='Gestión de Personas')
         self.notebook.add(self.tab_inventario, text='Gestión de Inventario')
         self.notebook.add(self.tab_transacciones, text='Transacciones')
+        self.notebook.add(self.tab_movimientos, text='Movimientos')
         
         # Vincular el evento de cambio de pestaña
         self.notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
@@ -137,6 +139,7 @@ class Aplicacion:
         self.setup_personas_tab()
         self.setup_inventario_tab()
         self.setup_transacciones_tab()
+        self.configurar_tab_movimientos()
         
         # Variable para la casilla de verificación
         self.entregado_var = tk.BooleanVar()
@@ -1476,6 +1479,75 @@ class Aplicacion:
                 self.menu_contextual.tk_popup(event.x_root, event.y_root)
             finally:
                 self.menu_contextual.grab_release()
+
+    def configurar_tab_movimientos(self):
+        # Frame para el formulario de movimientos
+        form_frame = ttk.Frame(self.tab_movimientos)
+        form_frame.pack(fill='x', pady=10, padx=10)
+
+        # Campos del formulario
+        ttk.Label(form_frame, text="Artículo:").grid(row=0, column=0, padx=5, pady=5)
+        self.combo_articulo = ttk.Combobox(form_frame)
+        self.combo_articulo.grid(row=0, column=1, padx=5, pady=5)
+
+        ttk.Label(form_frame, text="Tipo de Movimiento:").grid(row=1, column=0, padx=5, pady=5)
+        self.combo_tipo = ttk.Combobox(form_frame, values=["Entrada", "Salida"])
+        self.combo_tipo.grid(row=1, column=1, padx=5, pady=5)
+
+        ttk.Label(form_frame, text="Cantidad:").grid(row=2, column=0, padx=5, pady=5)
+        self.entry_cantidad = ttk.Entry(form_frame)
+        self.entry_cantidad.grid(row=2, column=1, padx=5, pady=5)
+
+        # Botón para registrar el movimiento
+        ttk.Button(form_frame, text="Registrar Movimiento", command=self.registrar_movimiento).grid(row=3, column=0, columnspan=2, pady=10)
+
+        # Frame para mostrar los movimientos
+        movimientos_frame = ttk.Frame(self.tab_movimientos)
+        movimientos_frame.pack(fill='both', expand=True, pady=10, padx=10)
+
+        # TreeView para mostrar los movimientos
+        self.tree_movimientos = ttk.Treeview(movimientos_frame, columns=('Articulo', 'Tipo', 'Cantidad', 'Fecha'), show='headings')
+        self.tree_movimientos.heading('Articulo', text='Artículo')
+        self.tree_movimientos.heading('Tipo', text='Tipo')
+        self.tree_movimientos.heading('Cantidad', text='Cantidad')
+        self.tree_movimientos.heading('Fecha', text='Fecha')
+        self.tree_movimientos.pack(fill='both', expand=True)
+
+    def registrar_movimiento(self):
+        # Obtener datos del formulario
+        articulo = self.combo_articulo.get()
+        tipo = self.combo_tipo.get()
+        cantidad = self.entry_cantidad.get()
+
+        # Validar datos
+        if not articulo or not tipo or not cantidad:
+            tk.messagebox.showwarning("Advertencia", "Todos los campos son obligatorios.")
+            return
+
+        try:
+            cantidad = int(cantidad)
+        except ValueError:
+            tk.messagebox.showwarning("Error", "La cantidad debe ser un número entero.")
+            return
+
+        # Registrar el movimiento en la base de datos
+        # Aquí deberías implementar la lógica para actualizar la base de datos
+
+        # Actualizar el TreeView de movimientos
+        self.tree_movimientos.insert('', 'end', values=(articulo, tipo, cantidad, "Fecha"))
+
+        # Limpiar el formulario
+        self.combo_articulo.set('')
+        self.combo_tipo.set('')
+        self.entry_cantidad.delete(0, tk.END)
+
+        # Actualizar el inventario
+        self.actualizar_inventario(articulo, tipo, cantidad)
+
+    def actualizar_inventario(self, articulo, tipo, cantidad):
+        # Lógica para actualizar el inventario
+        # Aquí deberías implementar la lógica para actualizar el inventario en la base de datos
+        pass
 
 class VentanaTransacciones:
     def __init__(self, master, app, db):
