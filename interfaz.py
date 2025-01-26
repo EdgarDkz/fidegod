@@ -69,6 +69,8 @@ class Aplicacion:
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(expand=True, fill='both', padx=10, pady=5)
         
+        # Opciones de municipios
+        self.municipios = ["Montemorelos", "Allende", "Rayones", "Linares", "Hualahuises", "Terán"]
         # Crear pestañas
         self.tab_personas = ttk.Frame(self.notebook)
         self.tab_inventario = ttk.Frame(self.notebook)
@@ -144,9 +146,7 @@ class Aplicacion:
         # Variable para la casilla de verificación
         self.entregado_var = tk.BooleanVar()
         
-        # Opciones de municipios
-        self.municipios = ["Montemorelos", "Allende", "Rayones", "Linares", "Hualahuises", "Terán"]
-        
+  
         # Campos del formulario
         self.campos_persona = {}
         campos_normales = [
@@ -866,14 +866,99 @@ class Aplicacion:
         messagebox.showinfo("Exportar a CSV", message)
 
     def setup_personas_tab(self):
+        # Crear frame principal con dos columnas
+        main_frame = ttk.Frame(self.tab_personas)
+        main_frame.pack(fill='both', expand=True, padx=5, pady=5)
+        
+        # Configurar el grid para las dos columnas
+        main_frame.grid_columnconfigure(0, weight=3)  # Columna izquierda (tabla) más ancha
+        main_frame.grid_columnconfigure(1, weight=1)  # Columna derecha (búsqueda) más estrecha
+        
+        # Frame izquierdo para la tabla
+        table_frame = ttk.Frame(main_frame)
+        table_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
         # Crear TreeView para mostrar personas
-        self.tree_personas = ttk.Treeview(self.tab_personas, columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 'Municipio', 'Fecha Petición', 'Fecha Entrega'), show='headings')
-        self.tree_personas.pack(fill='both', expand=True, padx=5, pady=5)
+        self.tree_personas = ttk.Treeview(table_frame, 
+                                        columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 'Municipio', 'Fecha Petición', 'Fecha Entrega'), 
+                                        show='headings')
+        
+        # Configurar columnas
+        for col in self.tree_personas['columns']:
+            self.tree_personas.heading(col, text=col)
+            self.tree_personas.column(col, width=100)
+        
+        # Agregar scrollbars
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.tree_personas.yview)
+        hsb = ttk.Scrollbar(table_frame, orient='horizontal', command=self.tree_personas.xview)
+        self.tree_personas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        
+        # Grid layout para tabla y scrollbars
+        self.tree_personas.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+
+        # Frame derecho para búsqueda y filtros
+        search_frame = ttk.LabelFrame(main_frame, text="Búsqueda y Filtros", padding=10)
+        search_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
+        
+        # Estilo para los widgets de búsqueda
+        style = ttk.Style()
+        style.configure('Search.TFrame', padding=5)
+        style.configure('Search.TLabel', font=('Helvetica', 9))
+        style.configure('Search.TButton', padding=5)
+
+        # Filtros de búsqueda con mejor organización
+        # Nombre
+        ttk.Label(search_frame, text="Nombre:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        self.combobox_nombre = ttk.Combobox(search_frame, width=25)
+        self.combobox_nombre.pack(fill='x', pady=(0, 10))
+        self.combobox_nombre.bind('<Return>', self.filtrar_personas)
+
+        # Artículo
+        ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        self.entry_buscar_articulo = ttk.Entry(search_frame, width=25)
+        self.entry_buscar_articulo.pack(fill='x', pady=(0, 10))
+        self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
+
+        # Municipio
+        ttk.Label(search_frame, text="Municipio:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        self.combobox_municipio = ttk.Combobox(search_frame, values=[''] + self.municipios, width=25)
+        self.combobox_municipio.pack(fill='x', pady=(0, 10))
+        self.combobox_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
+
+        # Estado
+        ttk.Label(search_frame, text="Estado:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        self.combo_estado = ttk.Combobox(search_frame, values=['Todos', 'Entregado', 'Pendiente'], width=25)
+        self.combo_estado.set('Todos')
+        self.combo_estado.pack(fill='x', pady=(0, 10))
+        self.combo_estado.bind('<<ComboboxSelected>>', self.filtrar_personas)
+
+        # Separador
+        ttk.Separator(search_frame, orient='horizontal').pack(fill='x', pady=10)
+
+        # Botones de acción
+        button_frame = ttk.Frame(search_frame, style='Search.TFrame')
+        button_frame.pack(fill='x', pady=5)
+
+        # Botón buscar con estilo
+        search_button = ttk.Button(button_frame, 
+                                 text="Buscar", 
+                                 command=lambda: self.filtrar_personas(None),
+                                 style='Search.TButton')
+        search_button.pack(fill='x', pady=5)
+
+        # Botón exportar con estilo
+        export_button = ttk.Button(button_frame, 
+                                 text="Exportar a Excel", 
+                                 command=self.exportar_a_excel,
+                                 style='Search.TButton')
+        export_button.pack(fill='x', pady=5)
 
         # Configurar el menú contextual
         self.menu_contextual = tk.Menu(self.root, tearoff=0)
-        
-        # Configurar estilo del menú
         self.menu_contextual.configure(
             font=('Helvetica', 10),
             bg='#ffffff',
@@ -911,16 +996,6 @@ class Aplicacion:
 
         # Vincular el clic derecho al TreeView
         self.tree_personas.bind("<Button-3>", self.mostrar_menu_contextual)
-
-        # Configurar columnas
-        for col in self.tree_personas['columns']:
-            self.tree_personas.heading(col, text=col)
-            self.tree_personas.column(col, width=100)
-
-        # Agregar scrollbar
-        scrollbar = ttk.Scrollbar(self.tab_personas, orient='vertical', command=self.tree_personas.yview)
-        scrollbar.pack(side='right', fill='y')
-        self.tree_personas.configure(yscrollcommand=scrollbar.set)
 
         # Cargar datos iniciales
         self.actualizar_lista_personas()
