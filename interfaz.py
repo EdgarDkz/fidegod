@@ -212,43 +212,6 @@ class Aplicacion:
         # Cargar datos iniciales
         self.actualizar_lista_personas()
 
-        # Crear un marco para la búsqueda
-        frame_busqueda = ttk.Frame(self.tab_personas)
-        frame_busqueda.pack(pady=10)
-
-        # Filtros de búsqueda
-        ttk.Label(frame_busqueda, text="Buscar por Nombre:").pack(side='left', padx=5)
-        self.combobox_nombre = ttk.Combobox(frame_busqueda)  # Cambiar de Entry a Combobox
-        self.combobox_nombre.pack(side='left', padx=5)
-        self.combobox_nombre.bind('<Return>', self.filtrar_personas)
-
-        ttk.Label(frame_busqueda, text="Buscar por Artículo:").pack(side='left', padx=5)
-        self.entry_buscar_articulo = ttk.Entry(frame_busqueda)  # Asegúrate de que esté definido
-        self.entry_buscar_articulo.pack(side='left', padx=5)
-        self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
-
-        ttk.Label(frame_busqueda, text="Buscar por Municipio:").pack(side='left', padx=5)
-        self.combobox_municipio = ttk.Combobox(frame_busqueda, values=[''] + self.municipios)
-        self.combobox_municipio.pack(side='left', padx=5)
-        self.combobox_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
-
-        # Nuevo filtro de estado
-        ttk.Label(frame_busqueda, text="Estado:").pack(side='left', padx=5)
-        self.combo_estado = ttk.Combobox(frame_busqueda, 
-                                       values=['Todos', 'Entregado', 'Pendiente'],
-                                       width=10)
-        self.combo_estado.set('Todos')
-        self.combo_estado.pack(side='left', padx=5)
-        self.combo_estado.bind('<<ComboboxSelected>>', self.filtrar_personas)
-
-        # Botón para buscar
-        ttk.Button(frame_busqueda, text="Buscar", 
-                  command=lambda: self.filtrar_personas(None)).pack(side='left', padx=5)
-
-        # Botón para exportar a Excel
-        ttk.Button(frame_busqueda, text="Exportar a Excel", 
-                  command=self.exportar_a_excel).pack(side='left', padx=5)
-
         # Cargar nombres y artículos en los comboboxes
         self.cargar_nombres_y_articulos()
 
@@ -866,7 +829,7 @@ class Aplicacion:
         messagebox.showinfo("Exportar a CSV", message)
 
     def setup_personas_tab(self):
-        # Crear frame principal con dos columnas
+        # Frame principal con dos columnas
         main_frame = ttk.Frame(self.tab_personas)
         main_frame.pack(fill='both', expand=True, padx=5, pady=5)
         
@@ -916,6 +879,7 @@ class Aplicacion:
         self.combobox_nombre = ttk.Combobox(search_frame, width=25)
         self.combobox_nombre.pack(fill='x', pady=(0, 10))
         self.combobox_nombre.bind('<Return>', self.filtrar_personas)
+        self.combobox_nombre.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Artículo
         ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
@@ -1500,47 +1464,59 @@ class Aplicacion:
         self.filtrar_transacciones()
 
     def filtrar_personas(self, event=None):
-        # Obtener valores de búsqueda
-        nombre = self.combobox_nombre.get().lower()  # Convertir a minúsculas
-        articulo = self.entry_buscar_articulo.get().lower()  # Convertir a minúsculas
-        municipio = self.combobox_municipio.get()  # Asegúrate de que esto esté definido
+        """Filtra las personas según los criterios de búsqueda"""
+        # Obtener los valores de los filtros
+        nombre = self.combobox_nombre.get().strip()
+        articulo = self.entry_buscar_articulo.get().strip()
+        municipio = self.combobox_municipio.get().strip()
         estado = self.combo_estado.get()
 
-        # Limpiar TreeView
+        # Limpiar el TreeView
         for item in self.tree_personas.get_children():
             self.tree_personas.delete(item)
 
-        # Obtener todas las personas
+        # Obtener personas de la base de datos
         personas = self.db.obtener_personas()
-
-        # Filtrar personas
+        
+        # Aplicar filtros
+        personas_filtradas = []
         for persona in personas:
-            # Convertir valores a minúsculas para comparación
-            nombre_persona = str(persona[1]).lower()  # Convertir a minúsculas
-            articulo_persona = str(persona[2]).lower()  # Convertir a minúsculas
-            municipio_persona = str(persona[5])
-            fecha_entrega = persona[7]
+            cumple_filtros = True
+            
+            # Filtrar por nombre
+            if nombre and nombre.lower() not in str(persona[1]).lower():
+                cumple_filtros = False
+                
+            # Filtrar por artículo
+            if articulo and articulo.lower() not in str(persona[2]).lower():
+                cumple_filtros = False
+                
+            # Filtrar por municipio
+            if municipio and municipio != '' and municipio != str(persona[5]):
+                cumple_filtros = False
+                
+            # Filtrar por estado
+            if estado != 'Todos':
+                tiene_fecha_entrega = persona[7] not in [None, 'None', '']
+                if estado == 'Entregado' and not tiene_fecha_entrega:
+                    cumple_filtros = False
+                elif estado == 'Pendiente' and tiene_fecha_entrega:
+                    cumple_filtros = False
+            
+            if cumple_filtros:
+                personas_filtradas.append(persona)
 
-            # Determinar estado
-            estado_persona = "Entregado" if fecha_entrega and fecha_entrega not in ['None', '', 'Pendiente'] else "Pendiente"
+        # Mostrar resultados filtrados
+        for persona in personas_filtradas:
+            # Convertir None o 'None' a 'Pendiente' para la fecha de entrega
+            valores = list(persona)
+            valores[7] = 'Pendiente' if valores[7] in [None, 'None', ''] else valores[7]
+            self.tree_personas.insert('', 'end', values=valores)
 
-            # Aplicar filtros
-            mostrar = True
-            if nombre and not nombre_persona.startswith(nombre):  # Cambiado a startswith
-                mostrar = False
-            if articulo and articulo and not articulo_persona.startswith(articulo):  # Cambiado a startswith
-                mostrar = False
-            if municipio and municipio != municipio_persona:
-                mostrar = False
-            if estado != 'Todos' and estado != estado_persona:
-                mostrar = False
-
-            # Mostrar si pasa todos los filtros
-            if mostrar:
-                # Convertir None o '' a 'Pendiente' para la visualización
-                valores = list(persona)
-                valores[-1] = 'Pendiente' if not valores[-1] or valores[-1] in ['None', ''] else valores[-1]
-                self.tree_personas.insert('', 'end', values=valores)
+        # Actualizar la lista de nombres en el combobox si es necesario
+        if not nombre:  # Solo actualizar si no hay un filtro de nombre activo
+            nombres = sorted(list(set([p[1] for p in personas if p[1]])))
+            self.combobox_nombre['values'] = [''] + nombres
 
     def mostrar_menu_contextual(self, event):
         """Muestra el menú contextual en la posición del clic"""
@@ -2522,47 +2498,59 @@ class VentanaEditarArticulo:
         self.filtrar_transacciones()
 
     def filtrar_personas(self, event=None):
-        # Obtener valores de búsqueda
-        nombre = self.combobox_nombre.get().lower()  # Convertir a minúsculas
-        articulo = self.entry_buscar_articulo.get().lower()  # Convertir a minúsculas
-        municipio = self.combobox_municipio.get()  # Asegúrate de que esto esté definido
+        """Filtra las personas según los criterios de búsqueda"""
+        # Obtener los valores de los filtros
+        nombre = self.combobox_nombre.get().strip()
+        articulo = self.entry_buscar_articulo.get().strip()
+        municipio = self.combobox_municipio.get().strip()
         estado = self.combo_estado.get()
 
-        # Limpiar TreeView
+        # Limpiar el TreeView
         for item in self.tree_personas.get_children():
             self.tree_personas.delete(item)
 
-        # Obtener todas las personas
+        # Obtener personas de la base de datos
         personas = self.db.obtener_personas()
-
-        # Filtrar personas
+        
+        # Aplicar filtros
+        personas_filtradas = []
         for persona in personas:
-            # Convertir valores a minúsculas para comparación
-            nombre_persona = str(persona[1]).lower()  # Convertir a minúsculas
-            articulo_persona = str(persona[2]).lower()  # Convertir a minúsculas
-            municipio_persona = str(persona[5])
-            fecha_entrega = persona[7]
+            cumple_filtros = True
+            
+            # Filtrar por nombre
+            if nombre and nombre.lower() not in str(persona[1]).lower():
+                cumple_filtros = False
+                
+            # Filtrar por artículo
+            if articulo and articulo.lower() not in str(persona[2]).lower():
+                cumple_filtros = False
+                
+            # Filtrar por municipio
+            if municipio and municipio != '' and municipio != str(persona[5]):
+                cumple_filtros = False
+                
+            # Filtrar por estado
+            if estado != 'Todos':
+                tiene_fecha_entrega = persona[7] not in [None, 'None', '']
+                if estado == 'Entregado' and not tiene_fecha_entrega:
+                    cumple_filtros = False
+                elif estado == 'Pendiente' and tiene_fecha_entrega:
+                    cumple_filtros = False
+            
+            if cumple_filtros:
+                personas_filtradas.append(persona)
 
-            # Determinar estado
-            estado_persona = "Entregado" if fecha_entrega and fecha_entrega not in ['None', '', 'Pendiente'] else "Pendiente"
+        # Mostrar resultados filtrados
+        for persona in personas_filtradas:
+            # Convertir None o 'None' a 'Pendiente' para la fecha de entrega
+            valores = list(persona)
+            valores[7] = 'Pendiente' if valores[7] in [None, 'None', ''] else valores[7]
+            self.tree_personas.insert('', 'end', values=valores)
 
-            # Aplicar filtros
-            mostrar = True
-            if nombre and not nombre_persona.startswith(nombre):  # Cambiado a startswith
-                mostrar = False
-            if articulo and articulo and not articulo_persona.startswith(articulo):  # Cambiado a startswith
-                mostrar = False
-            if municipio and municipio != municipio_persona:
-                mostrar = False
-            if estado != 'Todos' and estado != estado_persona:
-                mostrar = False
-
-            # Mostrar si pasa todos los filtros
-            if mostrar:
-                # Convertir None o '' a 'Pendiente' para la visualización
-                valores = list(persona)
-                valores[-1] = 'Pendiente' if not valores[-1] or valores[-1] in ['None', ''] else valores[-1]
-                self.tree_personas.insert('', 'end', values=valores)
+        # Actualizar la lista de nombres en el combobox si es necesario
+        if not nombre:  # Solo actualizar si no hay un filtro de nombre activo
+            nombres = sorted(list(set([p[1] for p in personas if p[1]])))
+            self.combobox_nombre['values'] = [''] + nombres
 
     def mostrar_menu_contextual(self, event):
         """Muestra el menú contextual en la posición del clic"""
