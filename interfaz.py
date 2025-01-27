@@ -224,6 +224,10 @@ class Aplicacion:
         style.configure('Accent.TButton', font=('Helvetica', 10), padding=5, background='#4CAF50', foreground='white')
         style.configure('Danger.TButton', font=('Helvetica', 10), padding=5, background='#f44336', foreground='white')
 
+        # Asegúrate de que el marco principal también se expanda
+        root.grid_columnconfigure(0, weight=1)
+        root.grid_rowconfigure(0, weight=1)
+
     def on_tab_changed(self, event):
         """Método llamado cuando se cambia de pestaña en el Notebook."""
         selected_tab = event.widget.tab('current')['text']
@@ -834,25 +838,29 @@ class Aplicacion:
         main_frame.pack(fill='both', expand=True, padx=5, pady=5)
         
         # Configurar el grid para las dos columnas
+        main_frame.grid_rowconfigure(0, weight=1)  # La fila 0 se expande en altura
         main_frame.grid_columnconfigure(0, weight=3)  # Columna izquierda (tabla) más ancha
         main_frame.grid_columnconfigure(1, weight=1)  # Columna derecha (búsqueda) más estrecha
         
         # Frame izquierdo para la tabla
         table_frame = ttk.Frame(main_frame)
         table_frame.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
-        table_frame.grid_rowconfigure(0, weight=1)
-        table_frame.grid_columnconfigure(0, weight=1)
+        # Configurar el table_frame para que se expanda en altura y ancho
+        table_frame.grid_rowconfigure(0, weight=1)  # La fila 0 se expande en altura
+        table_frame.grid_columnconfigure(0, weight=1)  # La columna 0 se expande en ancho
+
 
         # Crear TreeView para mostrar personas
         self.tree_personas = ttk.Treeview(table_frame, 
                                         columns=('ID', 'Nombre', 'Artículo', 'Teléfono', 'Dirección', 'Municipio', 'Fecha Petición', 'Fecha Entrega'), 
                                         show='headings')
         
-        # Configurar columnas
+        # Configurar columnas con ancho ajustado
+        column_widths = {'ID': 50, 'Nombre': 120, 'Artículo': 100, 'Teléfono': 100, 'Dirección': 150, 'Municipio': 100, 'Fecha Petición': 100, 'Fecha Entrega': 100}
         for col in self.tree_personas['columns']:
             self.tree_personas.heading(col, text=col)
-            self.tree_personas.column(col, width=100)
-        
+            self.tree_personas.column(col, width=column_widths[col])
+
         # Agregar scrollbars
         vsb = ttk.Scrollbar(table_frame, orient='vertical', command=self.tree_personas.yview)
         hsb = ttk.Scrollbar(table_frame, orient='horizontal', command=self.tree_personas.xview)
@@ -862,6 +870,14 @@ class Aplicacion:
         self.tree_personas.grid(row=0, column=0, sticky='nsew')
         vsb.grid(row=0, column=1, sticky='ns')
         hsb.grid(row=1, column=0, sticky='ew')
+# Ajustar el ancho de las columnas dinámicamente
+        def ajustar_ancho_columnas(event):
+            ancho_total = self.tree_personas.winfo_width()  # Ancho total del Treeview
+            for col in self.tree_personas['columns']:
+                self.tree_personas.column(col, width=int(ancho_total * 0.15))  # Ajustar proporcionalmente
+
+# Vincular el evento de redimensionamiento
+        self.tree_personas.bind('<Configure>', ajustar_ancho_columnas)
 
         # Frame derecho para búsqueda y filtros
         search_frame = ttk.LabelFrame(main_frame, text="Búsqueda y Filtros", padding=10)
@@ -873,53 +889,51 @@ class Aplicacion:
         style.configure('Search.TLabel', font=('Helvetica', 9))
         style.configure('Search.TButton', padding=5)
 
-        # Filtros de búsqueda con mejor organización
+        # Reorganizar filtros de búsqueda
+        search_frame.grid_columnconfigure(0, weight=1)
+        search_frame.grid_columnconfigure(1, weight=1)
+
         # Nombre
-        ttk.Label(search_frame, text="Nombre:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        ttk.Label(search_frame, text="Nombre:", style='Search.TLabel').grid(row=0, column=0, sticky='w')
         self.combobox_nombre = ttk.Combobox(search_frame, width=25)
-        self.combobox_nombre.pack(fill='x', pady=(0, 10))
+        self.combobox_nombre.grid(row=0, column=1, sticky='ew')
         self.combobox_nombre.bind('<Return>', self.filtrar_personas)
         self.combobox_nombre.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Artículo
-        ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').grid(row=1, column=0, sticky='w')
         self.entry_buscar_articulo = ttk.Entry(search_frame, width=25)
-        self.entry_buscar_articulo.pack(fill='x', pady=(0, 10))
+        self.entry_buscar_articulo.grid(row=1, column=1, sticky='ew')
         self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
 
         # Municipio
-        ttk.Label(search_frame, text="Municipio:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        ttk.Label(search_frame, text="Municipio:", style='Search.TLabel').grid(row=2, column=0, sticky='w')
         self.combobox_municipio = ttk.Combobox(search_frame, values=[''] + self.municipios, width=25)
-        self.combobox_municipio.pack(fill='x', pady=(0, 10))
+        self.combobox_municipio.grid(row=2, column=1, sticky='ew')
         self.combobox_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Estado
-        ttk.Label(search_frame, text="Estado:", style='Search.TLabel').pack(fill='x', pady=(0, 2))
+        ttk.Label(search_frame, text="Estado:", style='Search.TLabel').grid(row=3, column=0, sticky='w')
         self.combo_estado = ttk.Combobox(search_frame, values=['Todos', 'Entregado', 'Pendiente'], width=25)
         self.combo_estado.set('Todos')
-        self.combo_estado.pack(fill='x', pady=(0, 10))
+        self.combo_estado.grid(row=3, column=1, sticky='ew')
         self.combo_estado.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Separador
-        ttk.Separator(search_frame, orient='horizontal').pack(fill='x', pady=10)
+        ttk.Separator(search_frame, orient='horizontal').grid(row=4, column=0, columnspan=2, sticky='ew', pady=10)
 
         # Botones de acción
-        button_frame = ttk.Frame(search_frame, style='Search.TFrame')
-        button_frame.pack(fill='x', pady=5)
-
-        # Botón buscar con estilo
-        search_button = ttk.Button(button_frame, 
+        search_button = ttk.Button(search_frame, 
                                  text="Buscar", 
                                  command=lambda: self.filtrar_personas(None),
                                  style='Search.TButton')
-        search_button.pack(fill='x', pady=5)
+        search_button.grid(row=5, column=0, columnspan=2, sticky='ew', pady=5)
 
-        # Botón exportar con estilo
-        export_button = ttk.Button(button_frame, 
+        export_button = ttk.Button(search_frame, 
                                  text="Exportar a Excel", 
                                  command=self.exportar_a_excel,
                                  style='Search.TButton')
-        export_button.pack(fill='x', pady=5)
+        export_button.grid(row=6, column=0, columnspan=2, sticky='ew', pady=5)
 
         # Configurar el menú contextual
         self.menu_contextual = tk.Menu(self.root, tearoff=0)
@@ -963,6 +977,10 @@ class Aplicacion:
 
         # Cargar datos iniciales
         self.actualizar_lista_personas()
+
+        # Asegúrate de que el marco principal también se expanda
+        self.tab_personas.grid_columnconfigure(0, weight=1)
+        self.tab_personas.grid_rowconfigure(0, weight=1)
 
     # Métodos para gestión de personas
     def actualizar_lista_personas(self):
@@ -1943,7 +1961,7 @@ class VentanaEditarPersona:
 
         # Frame para datos personales
         frame_datos = ttk.LabelFrame(master, text="Datos Personales", padding="10")
-        frame_datos.pack(fill='x', padx=10, pady=5)
+        frame_datos.pack(fill='x', expand=True, padx=10, pady=5)
 
         # Crear campos
         self.campos = {}
@@ -1963,8 +1981,8 @@ class VentanaEditarPersona:
         # Municipio (Combobox)
         ttk.Label(frame_datos, text="Municipio:").grid(row=4, column=0, padx=5, pady=5, sticky='w')
         self.campos['municipio'] = ttk.Combobox(frame_datos, 
-                                              values=["Montemorelos", "Allende", "Rayones", "Linares", "Hualahuises", "Terán"],
-                                              width=27)
+                                            values=["Montemorelos", "Allende", "Rayones", "Linares", "Hualahuises", "Terán"],
+                                            width=27)
         self.campos['municipio'].grid(row=4, column=1, padx=5, pady=5)
 
         # Frame para fechas
@@ -1983,10 +2001,10 @@ class VentanaEditarPersona:
         # Fecha de Entrega
         ttk.Label(frame_fechas, text="Fecha Entrega:").grid(row=1, column=0, padx=5, pady=5, sticky='w')
         self.campos['fecha_entrega'] = DateEntry(frame_fechas, width=27,
-                                               background='darkblue',
-                                               foreground='white',
-                                               borderwidth=2,
-                                               date_pattern='yyyy-mm-dd')
+                                            background='darkblue',
+                                            foreground='white',
+                                            borderwidth=2,
+                                            date_pattern='yyyy-mm-dd')
         self.campos['fecha_entrega'].grid(row=1, column=1, padx=5, pady=5)
 
         # Frame para botones
@@ -2021,7 +2039,7 @@ class VentanaEditarPersona:
             fecha_peticion = datetime.strptime(valores[5], '%Y-%m-%d')
             self.campos['fecha_peticion'].set_date(fecha_peticion)
         except (ValueError, TypeError):
-            print(f"Error al cargar fecha de petición: {valores[5]}")
+            print(f"Error al cargar tición: {valores[5]}")
 
         try:
             if valores[6] and valores[6] != 'Pendiente':
