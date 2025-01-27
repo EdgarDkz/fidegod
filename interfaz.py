@@ -1628,6 +1628,32 @@ class Aplicacion:
         # Aquí deberías implementar la lógica para actualizar el inventario en la base de datos
         pass
 
+    def configurar_tab_personas(self):
+        """Configura la pestaña de personas"""
+        # Frame para los filtros
+        filtros_frame = ttk.Frame(self.tab_personas)
+        filtros_frame.pack(fill='x', pady=10, padx=10)
+
+        # Campos de filtrado
+        ttk.Label(filtros_frame, text="Nombre:").grid(row=0, column=0, padx=(5, 10), pady=5, sticky='e')
+        self.combobox_nombre = ttk.Combobox(filtros_frame)
+        self.combobox_nombre.grid(row=0, column=1, padx=(0, 5), pady=5, sticky='ew')
+
+        ttk.Label(filtros_frame, text="Artículo:").grid(row=1, column=0, padx=(5, 10), pady=5, sticky='e')
+        self.entry_buscar_articulo = ttk.Entry(filtros_frame)
+        self.entry_buscar_articulo.grid(row=1, column=1, padx=(0, 5), pady=5, sticky='ew')
+
+        ttk.Label(filtros_frame, text="Municipio:").grid(row=2, column=0, padx=(5, 10), pady=5, sticky='e')
+        self.combobox_municipio = ttk.Combobox(filtros_frame)
+        self.combobox_municipio.grid(row=2, column=1, padx=(0, 5), pady=5, sticky='ew')
+
+        ttk.Label(filtros_frame, text="Estado:").grid(row=3, column=0, padx=(5, 10), pady=5, sticky='e')
+        self.combo_estado = ttk.Combobox(filtros_frame, values=["Todos", "Entregado", "Pendiente"])
+        self.combo_estado.grid(row=3, column=1, padx=(0, 5), pady=5, sticky='ew')
+
+        # Botón para aplicar filtros
+        ttk.Button(filtros_frame, text="Filtrar", command=self.filtrar_personas).grid(row=4, column=0, columnspan=2, pady=10, sticky='ew')
+
 class VentanaTransacciones:
     def __init__(self, master, app, db):
         self.master = master
