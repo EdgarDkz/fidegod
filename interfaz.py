@@ -244,26 +244,27 @@ class Aplicacion:
         self.combo_articulo['values'] = articulos  # Asegúrate de usar el nombre correcto
 
     def setup_inventario_tab(self):
-        """Configura la pestaña de inventario con un diseño más profesional"""
+        """Configura la pestaña de inventario con un diseño más profesional y optimizado"""
         # Frame principal usando grid
         main_frame = ttk.Frame(self.tab_inventario)
-        main_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        main_frame.pack(fill='both', expand=True, padx=5, pady=5)
 
         main_frame.grid_columnconfigure(0, weight=3)  # Columna izquierda más ancha
         main_frame.grid_columnconfigure(1, weight=2)  # Columna derecha más estrecha
 
         # Nuevo panel superior para búsqueda y agregar producto
         top_panel = ttk.Frame(main_frame)
-        top_panel.grid(row=0, column=0, sticky='new', padx=(0, 5), pady=(0, 5))
+        top_panel.grid(row=0, column=0, columnspan=2, sticky='ew', pady=(0, 5))
 
         # Frame para búsqueda con estilo
-        search_frame = ttk.LabelFrame(top_panel, text="Búsqueda de Artículos", padding=10)
-        search_frame.pack(fill='x', pady=(0, 5))
+        search_frame = ttk.LabelFrame(top_panel, text="Búsqueda de Artículos", padding=5)
+        search_frame.pack(fill='x')
 
         # Barra de búsqueda con icono
         ttk.Label(search_frame, text="Buscar:").pack(side='left', padx=5)
         self.entry_busqueda = ttk.Entry(search_frame)
         self.entry_busqueda.pack(side='left', fill='x', expand=True, padx=5)
+        self.entry_busqueda.bind('<KeyRelease>', self.buscar_en_tiempo_real)  # Vincular evento de tecla
 
         # Botón de búsqueda
         ttk.Button(search_frame, text="Buscar", command=self.buscar_articulos).pack(side='left', padx=5)
@@ -289,9 +290,9 @@ class Aplicacion:
         tree_frame.grid_columnconfigure(0, weight=1)
 
         self.tree_inventario = ttk.Treeview(tree_frame,
-                                        columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
-                                        show='headings',
-                                        style='Custom.Treeview')
+                                            columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
+                                            show='headings',
+                                            style='Custom.Treeview')
 
         # Configurar columnas
         self.tree_inventario.heading('ID', text='ID')
@@ -323,11 +324,11 @@ class Aplicacion:
 
         # Panel derecho (detalles y imagen)
         right_panel = ttk.Frame(main_frame)
-        right_panel.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
+        right_panel.grid(row=1, column=1, sticky='nsew', padx=(5, 0))
 
         # Frame para detalles con estilo minimalista
-        details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=15)
-        details_frame.pack(fill='x', pady=(0, 10))
+        details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=10)
+        details_frame.pack(fill='both', expand=True, pady=(0, 5))
 
         # Definir los campos de entrada
         self.campos_inventario = {}
@@ -339,63 +340,62 @@ class Aplicacion:
         style.configure('Minimal.DateEntry', padding=5)
         style.configure('Minimal.TButton',
                         font=('Helvetica', 9),
-                        padding=8)
-
+                        padding=5)
 
         # Crear campos con sus etiquetas
         campos = [
             ('Nombre:', 'entry_nombre'),
             ('Descripción:', 'entry_descripcion'),
-            ('Cantidad:', 'entry_cantidad'), 
+            ('Cantidad:', 'entry_cantidad'),
             ('Fecha de Ingreso:', 'entry_fecha')
         ]
 
         for i, (label, campo) in enumerate(campos):
             # Frame para cada campo para mejor alineación
             field_frame = ttk.Frame(details_frame)
-            field_frame.grid(row=i, column=0, sticky='ew', pady=3)
+            field_frame.grid(row=i, column=0, sticky='ew', pady=2)
             field_frame.grid_columnconfigure(1, weight=1)
-            
-            ttk.Label(field_frame, text=label, style='Minimal.TLabel').grid(row=0, column=0, padx=(0,10), sticky='e')
-            
+
+            ttk.Label(field_frame, text=label, style='Minimal.TLabel').grid(row=0, column=0, padx=(0, 5), sticky='e')
+
             if campo == 'entry_fecha':
-                widget = DateEntry(field_frame, 
-                                 width=25,
-                                 background='white',
-                                 foreground='black',
-                                 borderwidth=1,
-                                 date_pattern='yyyy-mm-dd',
-                                 style='Minimal.DateEntry')
+                widget = DateEntry(field_frame,
+                                width=25,
+                                background='white',
+                                foreground='black',
+                                borderwidth=1,
+                                date_pattern='yyyy-mm-dd',
+                                style='Minimal.DateEntry')
             else:
-                widget = ttk.Entry(field_frame, width=30, style='Minimal.TEntry')
+                widget = ttk.Entry(field_frame, width=25, style='Minimal.TEntry')
             widget.grid(row=0, column=1, sticky='ew')
             self.campos_inventario[campo] = widget
 
         # Frame para la imagen con estilo minimalista
-        self.image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=15)
-        self.image_frame.pack(fill='both', expand=True, pady=10)
+        self.image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=10)
+        self.image_frame.pack(fill='both', expand=True, pady=(0, 5))
 
         # Label para mostrar la imagen
         self.image_label = ttk.Label(self.image_frame)
-        self.image_label.pack(pady=15)
+        self.image_label.pack(pady=10)
 
         # Frame para botones de imagen
         image_buttons_frame = ttk.Frame(self.image_frame)
-        image_buttons_frame.pack(pady=10)
+        image_buttons_frame.pack(pady=5)
 
         # Botones con estilo minimalista
-        ttk.Button(image_buttons_frame, 
-                  text="Seleccionar Imagen",
-                  style='Minimal.TButton',
-                  command=self.seleccionar_imagen).pack(side='left', padx=8)
-        ttk.Button(image_buttons_frame, 
-                  text="Eliminar Imagen",
-                  style='Minimal.TButton',
-                  command=self.eliminar_imagen).pack(side='left', padx=8)
+        ttk.Button(image_buttons_frame,
+                text="Seleccionar Imagen",
+                style='Minimal.TButton',
+                command=self.seleccionar_imagen).pack(side='left', padx=5)
+        ttk.Button(image_buttons_frame,
+                text="Eliminar Imagen",
+                style='Minimal.TButton',
+                command=self.eliminar_imagen).pack(side='left', padx=5)
 
         # Frame para los botones de acción
         button_frame = ttk.Frame(details_frame)
-        button_frame.grid(row=5, column=0, sticky='ew', pady=10)
+        button_frame.grid(row=5, column=0, sticky='ew', pady=5)
 
         # Estilo para los botones
         style = ttk.Style()
@@ -455,16 +455,13 @@ class Aplicacion:
         # Mostrar imagen por defecto inicialmente
         self.mostrar_imagen_por_defecto()
 
-        # Frame para el filtro de búsqueda
-        filtro_frame = ttk.Frame(self.tab_inventario)
-        filtro_frame.pack(fill='x', padx=10, pady=5)
-
-        # Mover el frame de búsqueda debajo del TreeView
-        search_frame.pack_forget()
-        search_frame.pack(fill='x', side='bottom', pady=5, padx=5)
-
         # Vincular el evento de redimensionamiento al TreeView
         self.tree_inventario.bind('<Configure>', self.on_window_resize)
+
+    def buscar_en_tiempo_real(self, event=None):
+        """Realiza la búsqueda en tiempo real mientras el usuario escribe"""
+        texto_busqueda = self.entry_busqueda.get().strip()  # Obtener texto del Entry
+        self.buscar_articulos(texto_busqueda)  # Llamar a la función de búsqueda
 
     def cargar_detalles_articulo(self, event=None):
         """Carga los detalles del artículo seleccionado en los campos"""
@@ -908,12 +905,14 @@ class Aplicacion:
         self.combobox_nombre.grid(row=0, column=1, sticky='ew', pady=(0, 5))
         self.combobox_nombre.bind('<Return>', self.filtrar_personas)
         self.combobox_nombre.bind('<<ComboboxSelected>>', self.filtrar_personas)
+        self.combobox_nombre.bind('<KeyRelease>', self.filtrar_personas)  # Búsqueda en tiempo real
 
         # Artículo
         ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').grid(row=1, column=0, sticky='w', pady=(0, 5))
         self.entry_buscar_articulo = ttk.Entry(search_frame, width=25, font=('Helvetica', 10))
         self.entry_buscar_articulo.grid(row=1, column=1, sticky='ew', pady=(0, 5))
         self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
+        self.entry_buscar_articulo.bind('<KeyRelease>', self.filtrar_personas)  # Búsqueda en tiempo real
 
         # Municipio
         ttk.Label(search_frame, text="Municipio:", style='Search.TLabel').grid(row=2, column=0, sticky='w', pady=(0, 5))
@@ -1302,9 +1301,9 @@ class Aplicacion:
             print(f"Error al mostrar imagen: {e}")
             self.mostrar_imagen_por_defecto()
 
-    def buscar_articulos(self):
+    def buscar_articulos(self, texto_busqueda=''):
         """Filtra y muestra los artículos en inventario según el término de búsqueda."""
-        filtro = self.entry_busqueda.get().strip().lower()
+        filtro = texto_busqueda.lower()  # Usar el texto de búsqueda
         
         # Limpiar la tabla
         for item in self.tree_inventario.get_children():
