@@ -242,7 +242,6 @@ class Aplicacion:
         # Llenar los comboboxes
         self.combobox_nombre['values'] = nombres
         self.combo_articulo['values'] = articulos  # Asegúrate de usar el nombre correcto
-
     def setup_inventario_tab(self):
         """Configura la pestaña de inventario con un diseño más profesional y optimizado"""
         # Frame principal usando grid
@@ -252,8 +251,8 @@ class Aplicacion:
         # Configurar filas y columnas para que se expanda
         main_frame.grid_rowconfigure(0, weight=0)  # Fila para el panel superior
         main_frame.grid_rowconfigure(1, weight=1)  # Fila para el contenido (TreeView y detalles)
-        main_frame.grid_columnconfigure(0, weight=3)  # Columna izquierda más ancha
-        main_frame.grid_columnconfigure(1, weight=2)  # Columna derecha más estrecha
+        main_frame.grid_columnconfigure(0, weight=1)  # Columna izquierda
+        main_frame.grid_columnconfigure(1, weight=1)  # Columna derecha
 
         # Nuevo panel superior para búsqueda y agregar producto
         top_panel = ttk.Frame(main_frame)
@@ -285,17 +284,10 @@ class Aplicacion:
         left_panel.grid(row=1, column=0, sticky='nsew', padx=(0, 5))
 
         # TreeView con estilo
-        tree_frame = ttk.Frame(left_panel)
-        tree_frame.grid(row=0, column=0, sticky='nsew')
-
-        tree_frame.grid_rowconfigure(0, weight=1)  # Permitir que la fila 0 se expanda
-        tree_frame.grid_columnconfigure(0, weight=1)  # Permitir que la columna 0 se expanda
-
-        # Crear TreeView para mostrar artículos
-        self.tree_inventario = ttk.Treeview(left_panel, 
-                                        columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'), 
+        self.tree_inventario = ttk.Treeview(left_panel,
+                                        columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
                                         show='headings')
-        
+
         # Configurar columnas con ancho ajustado
         column_widths_articulos = {'ID': 50, 'Nombre': 120, 'Descripción': 150, 'Cantidad': 100, 'Imagen': 100, 'Fecha': 100}
         for col in self.tree_inventario['columns']:
@@ -306,17 +298,14 @@ class Aplicacion:
         vsb_articulos = ttk.Scrollbar(left_panel, orient='vertical', command=self.tree_inventario.yview)
         hsb_articulos = ttk.Scrollbar(left_panel, orient='horizontal', command=self.tree_inventario.xview)
         self.tree_inventario.configure(yscrollcommand=vsb_articulos.set, xscrollcommand=hsb_articulos.set)
-        
+
         # Grid layout para tabla y scrollbars
         self.tree_inventario.grid(row=0, column=0, sticky='nsew')
         vsb_articulos.grid(row=0, column=1, sticky='ns')
         hsb_articulos.grid(row=1, column=0, sticky='ew')
         # Asegúrate de que el panel izquierdo se expanda
         left_panel.grid_rowconfigure(0, weight=1)
-
-        # Agregar un espacio vacío debajo del TreeView
-        empty_frame = ttk.Frame(left_panel)
-        empty_frame.grid(row=1, column=0, sticky='nsew')  # Este frame se puede usar para dejar espacio libre
+        left_panel.grid_columnconfigure(0, weight=1)
 
         # Panel derecho (detalles y imagen)
         right_panel = ttk.Frame(main_frame)
@@ -451,6 +440,8 @@ class Aplicacion:
         # Vincular el evento de redimensionamiento al TreeView
         self.tree_inventario.bind('<Configure>', self.on_window_resize)
 
+ 
+ 
     def buscar_en_tiempo_real(self, event=None):
         """Realiza la búsqueda en tiempo real mientras el usuario escribe"""
         texto_busqueda = self.entry_busqueda.get().strip()  # Obtener texto del Entry
