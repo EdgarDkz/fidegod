@@ -282,34 +282,49 @@ class Aplicacion:
         # Panel izquierdo (búsqueda y lista)
         left_panel = ttk.Frame(main_frame)
         left_panel.grid(row=1, column=0, sticky='nsew', padx=(0, 5))
-
-        # TreeView con estilo
-        self.tree_inventario = ttk.Treeview(left_panel,
-                                        columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
-                                        show='headings')
-
-        # Configurar columnas con ancho ajustado
-        column_widths_articulos = {'ID': 50, 'Nombre': 120, 'Descripción': 150, 'Cantidad': 100, 'Imagen': 100, 'Fecha': 100}
-        for col in self.tree_inventario['columns']:
-            self.tree_inventario.heading(col, text=col)
-            self.tree_inventario.column(col, width=column_widths_articulos[col])
-
-        # Agregar scrollbars
-        vsb_articulos = ttk.Scrollbar(left_panel, orient='vertical', command=self.tree_inventario.yview)
-        hsb_articulos = ttk.Scrollbar(left_panel, orient='horizontal', command=self.tree_inventario.xview)
-        self.tree_inventario.configure(yscrollcommand=vsb_articulos.set, xscrollcommand=hsb_articulos.set)
-
-        # Grid layout para tabla y scrollbars
-        self.tree_inventario.grid(row=0, column=0, sticky='nsew')
-        vsb_articulos.grid(row=0, column=1, sticky='ns')
-        hsb_articulos.grid(row=1, column=0, sticky='ew')
-        # Asegúrate de que el panel izquierdo se expanda
         left_panel.grid_rowconfigure(0, weight=1)
         left_panel.grid_columnconfigure(0, weight=1)
 
+        # TreeView con estilo
+        tree_frame = ttk.Frame(left_panel)
+        tree_frame.grid(row=0, column=0, sticky='nsew')
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        self.tree_inventario = ttk.Treeview(tree_frame,
+                                     columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Fecha'),
+                                     show='headings',
+                                     style='Custom.Treeview')
+
+        # Configurar columnas
+        self.tree_inventario.heading('ID', text='ID')
+        self.tree_inventario.heading('Nombre', text='Nombre del Artículo')
+        self.tree_inventario.heading('Descripción', text='Descripción')
+        self.tree_inventario.heading('Cantidad', text='Cantidad')
+        self.tree_inventario.heading('Fecha', text='Fecha de Ingreso')
+
+        # Ajustar anchos de columna
+        self.tree_inventario.column('ID', width=50)
+        self.tree_inventario.column('Nombre', width=200)
+        self.tree_inventario.column('Descripción', width=200)
+        self.tree_inventario.column('Cantidad', width=100)
+        self.tree_inventario.column('Fecha', width=100)
+
+        # Scrollbars
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree_inventario.yview)
+        hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree_inventario.xview)
+        self.tree_inventario.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        # Grid del TreeView y scrollbars
+        self.tree_inventario.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+        tree_frame.grid_columnconfigure(0, weight=1)
+        tree_frame.grid_rowconfigure(0, weight=1)
+
         # Panel derecho (detalles y imagen)
         right_panel = ttk.Frame(main_frame)
-        right_panel.grid(row=1, column=1, sticky='nsew', padx=(5, 0))
+        right_panel.grid(row=1, column=1, sticky='nsw', padx=(5, 0))
 
         # Frame para detalles con estilo minimalista
         details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=10)
@@ -1170,7 +1185,6 @@ class Aplicacion:
                 articulo[1],  # Nombre
                 articulo[2],  # Descripción
                 articulo[3],  # Cantidad
-                articulo[4],  # Imagen
                 articulo[5]   # Fecha
             )
             self.tree_inventario.insert('', 'end', values=valores)
