@@ -249,6 +249,9 @@ class Aplicacion:
         main_frame = ttk.Frame(self.tab_inventario)
         main_frame.pack(fill='both', expand=True, padx=5, pady=5)
 
+        # Configurar filas y columnas para que se expanda
+        main_frame.grid_rowconfigure(0, weight=0)  # Fila para el panel superior
+        main_frame.grid_rowconfigure(1, weight=1)  # Fila para el contenido (TreeView y detalles)
         main_frame.grid_columnconfigure(0, weight=3)  # Columna izquierda más ancha
         main_frame.grid_columnconfigure(1, weight=2)  # Columna derecha más estrecha
 
@@ -280,47 +283,40 @@ class Aplicacion:
         # Panel izquierdo (búsqueda y lista)
         left_panel = ttk.Frame(main_frame)
         left_panel.grid(row=1, column=0, sticky='nsew', padx=(0, 5))
-        left_panel.grid_rowconfigure(0, weight=1)
-        left_panel.grid_columnconfigure(0, weight=1)
 
         # TreeView con estilo
         tree_frame = ttk.Frame(left_panel)
         tree_frame.grid(row=0, column=0, sticky='nsew')
-        tree_frame.grid_rowconfigure(0, weight=1)
-        tree_frame.grid_columnconfigure(0, weight=1)
 
-        self.tree_inventario = ttk.Treeview(tree_frame,
-                                            columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
-                                            show='headings',
-                                            style='Custom.Treeview')
+        tree_frame.grid_rowconfigure(0, weight=1)  # Permitir que la fila 0 se expanda
+        tree_frame.grid_columnconfigure(0, weight=1)  # Permitir que la columna 0 se expanda
 
-        # Configurar columnas
-        self.tree_inventario.heading('ID', text='ID')
-        self.tree_inventario.heading('Nombre', text='Nombre del Artículo')
-        self.tree_inventario.heading('Descripción', text='Descripción')
-        self.tree_inventario.heading('Cantidad', text='Cantidad')
-        self.tree_inventario.heading('Imagen', text='Imagen')
-        self.tree_inventario.heading('Fecha', text='Fecha de Ingreso')
+        # Crear TreeView para mostrar artículos
+        self.tree_inventario = ttk.Treeview(left_panel, 
+                                        columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'), 
+                                        show='headings')
+        
+        # Configurar columnas con ancho ajustado
+        column_widths_articulos = {'ID': 50, 'Nombre': 120, 'Descripción': 150, 'Cantidad': 100, 'Imagen': 100, 'Fecha': 100}
+        for col in self.tree_inventario['columns']:
+            self.tree_inventario.heading(col, text=col)
+            self.tree_inventario.column(col, width=column_widths_articulos[col])
 
-        # Ajustar anchos de columna
-        self.tree_inventario.column('ID', width=50)
-        self.tree_inventario.column('Nombre', width=200)
-        self.tree_inventario.column('Descripción', width=200)
-        self.tree_inventario.column('Cantidad', width=100)
-        self.tree_inventario.column('Imagen', width=150)
-        self.tree_inventario.column('Fecha', width=100)
-
-        # Scrollbars
-        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree_inventario.yview)
-        hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree_inventario.xview)
-        self.tree_inventario.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-
-        # Grid del TreeView y scrollbars
+        # Agregar scrollbars
+        vsb_articulos = ttk.Scrollbar(left_panel, orient='vertical', command=self.tree_inventario.yview)
+        hsb_articulos = ttk.Scrollbar(left_panel, orient='horizontal', command=self.tree_inventario.xview)
+        self.tree_inventario.configure(yscrollcommand=vsb_articulos.set, xscrollcommand=hsb_articulos.set)
+        
+        # Grid layout para tabla y scrollbars
         self.tree_inventario.grid(row=0, column=0, sticky='nsew')
-        vsb.grid(row=0, column=1, sticky='ns')
-        hsb.grid(row=1, column=0, sticky='ew')
-        tree_frame.grid_columnconfigure(0, weight=1)
-        tree_frame.grid_rowconfigure(0, weight=1)
+        vsb_articulos.grid(row=0, column=1, sticky='ns')
+        hsb_articulos.grid(row=1, column=0, sticky='ew')
+        # Asegúrate de que el panel izquierdo se expanda
+        left_panel.grid_rowconfigure(0, weight=1)
+
+        # Agregar un espacio vacío debajo del TreeView
+        empty_frame = ttk.Frame(left_panel)
+        empty_frame.grid(row=1, column=0, sticky='nsew')  # Este frame se puede usar para dejar espacio libre
 
         # Panel derecho (detalles y imagen)
         right_panel = ttk.Frame(main_frame)
@@ -328,7 +324,7 @@ class Aplicacion:
 
         # Frame para detalles con estilo minimalista
         details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=10)
-        details_frame.pack(fill='both', expand=True, pady=(0, 5))
+        details_frame.pack(fill='both', expand=True)
 
         # Definir los campos de entrada
         self.campos_inventario = {}
@@ -338,9 +334,7 @@ class Aplicacion:
         style.configure('Minimal.TLabel', font=('Helvetica', 10))
         style.configure('Minimal.TEntry', padding=5)
         style.configure('Minimal.DateEntry', padding=5)
-        style.configure('Minimal.TButton',
-                        font=('Helvetica', 9),
-                        padding=5)
+        style.configure('Minimal.TButton', font=('Helvetica', 9), padding=5)
 
         # Crear campos con sus etiquetas
         campos = [
@@ -373,7 +367,7 @@ class Aplicacion:
 
         # Frame para la imagen con estilo minimalista
         self.image_frame = ttk.LabelFrame(right_panel, text="Imagen del Artículo", padding=10)
-        self.image_frame.pack(fill='both', expand=True, pady=(0, 5))
+        self.image_frame.pack(fill='both', expand=True)
 
         # Label para mostrar la imagen
         self.image_label = ttk.Label(self.image_frame)
@@ -395,10 +389,9 @@ class Aplicacion:
 
         # Frame para los botones de acción
         button_frame = ttk.Frame(details_frame)
-        button_frame.grid(row=5, column=0, sticky='ew', pady=5)
+        button_frame.grid(row=len(campos), column=0, sticky='ew', pady=5)
 
         # Estilo para los botones
-        style = ttk.Style()
         style.configure('Success.TButton', background='#28a745')
         style.configure('Danger.TButton', background='#dc3545')
         style.configure('Warning.TButton', background='#ffc107')
