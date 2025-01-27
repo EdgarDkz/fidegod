@@ -248,45 +248,51 @@ class Aplicacion:
         # Frame principal usando grid
         main_frame = ttk.Frame(self.tab_inventario)
         main_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
         main_frame.grid_columnconfigure(0, weight=3)  # Columna izquierda más ancha
         main_frame.grid_columnconfigure(1, weight=2)  # Columna derecha más estrecha
 
-        # Panel izquierdo (búsqueda y lista)
-        left_panel = ttk.Frame(main_frame)
-        left_panel.grid(row=0, column=0, sticky='nsew', padx=(0, 5))
-        
+        # Nuevo panel superior para búsqueda y agregar producto
+        top_panel = ttk.Frame(main_frame)
+        top_panel.grid(row=0, column=0, sticky='new', padx=(0, 5), pady=(0, 5))
+
         # Frame para búsqueda con estilo
-        search_frame = ttk.LabelFrame(left_panel, text="Búsqueda de Artículos", padding=10)
+        search_frame = ttk.LabelFrame(top_panel, text="Búsqueda de Artículos", padding=10)
         search_frame.pack(fill='x', pady=(0, 5))
-        
+
         # Barra de búsqueda con icono
         ttk.Label(search_frame, text="Buscar:").pack(side='left', padx=5)
         self.entry_busqueda = ttk.Entry(search_frame)
         self.entry_busqueda.pack(side='left', fill='x', expand=True, padx=5)
-        
+
         # Botón de búsqueda
         ttk.Button(search_frame, text="Buscar", command=self.buscar_articulos).pack(side='left', padx=5)
 
         # Vincular la tecla Enter al campo de búsqueda
         self.entry_busqueda.bind('<Return>', lambda event: self.buscar_articulos())
-        
-        # Botones con estilo
-        style = ttk.Style()
-        style.configure('Accent.TButton', background='#4CAF50')
-        
-        ttk.Button(search_frame, text="Agregar Producto", 
-                   command=self.abrir_ventana_agregar_producto,
-                   style='Accent.TButton').pack(side='left', padx=5)
+
+        # Botón "Agregar Producto"
+        ttk.Button(search_frame, text="Agregar Producto",
+                command=self.abrir_ventana_agregar_producto,
+                style='Accent.TButton').pack(side='left', padx=5)
+
+        # Panel izquierdo (búsqueda y lista)
+        left_panel = ttk.Frame(main_frame)
+        left_panel.grid(row=1, column=0, sticky='nsew', padx=(0, 5))
+        left_panel.grid_rowconfigure(0, weight=1)
+        left_panel.grid_columnconfigure(0, weight=1)
 
         # TreeView con estilo
         tree_frame = ttk.Frame(left_panel)
-        tree_frame.pack(fill='both', expand=True)
-        
-        self.tree_inventario = ttk.Treeview(tree_frame, 
-                                           columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
-                                           show='headings',
-                                           style='Custom.Treeview')
-        
+        tree_frame.grid(row=0, column=0, sticky='nsew')
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
+
+        self.tree_inventario = ttk.Treeview(tree_frame,
+                                        columns=('ID', 'Nombre', 'Descripción', 'Cantidad', 'Imagen', 'Fecha'),
+                                        show='headings',
+                                        style='Custom.Treeview')
+
         # Configurar columnas
         self.tree_inventario.heading('ID', text='ID')
         self.tree_inventario.heading('Nombre', text='Nombre del Artículo')
@@ -294,7 +300,7 @@ class Aplicacion:
         self.tree_inventario.heading('Cantidad', text='Cantidad')
         self.tree_inventario.heading('Imagen', text='Imagen')
         self.tree_inventario.heading('Fecha', text='Fecha de Ingreso')
-        
+
         # Ajustar anchos de columna
         self.tree_inventario.column('ID', width=50)
         self.tree_inventario.column('Nombre', width=200)
@@ -307,7 +313,7 @@ class Aplicacion:
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree_inventario.yview)
         hsb = ttk.Scrollbar(tree_frame, orient="horizontal", command=self.tree_inventario.xview)
         self.tree_inventario.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
-        
+
         # Grid del TreeView y scrollbars
         self.tree_inventario.grid(row=0, column=0, sticky='nsew')
         vsb.grid(row=0, column=1, sticky='ns')
@@ -318,7 +324,7 @@ class Aplicacion:
         # Panel derecho (detalles y imagen)
         right_panel = ttk.Frame(main_frame)
         right_panel.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
-        
+
         # Frame para detalles con estilo minimalista
         details_frame = ttk.LabelFrame(right_panel, text="Detalles del Artículo", padding=15)
         details_frame.pack(fill='x', pady=(0, 10))
@@ -331,9 +337,10 @@ class Aplicacion:
         style.configure('Minimal.TLabel', font=('Helvetica', 10))
         style.configure('Minimal.TEntry', padding=5)
         style.configure('Minimal.DateEntry', padding=5)
-        style.configure('Minimal.TButton', 
-                       font=('Helvetica', 9),
-                       padding=8)
+        style.configure('Minimal.TButton',
+                        font=('Helvetica', 9),
+                        padding=8)
+
 
         # Crear campos con sus etiquetas
         campos = [
@@ -870,82 +877,88 @@ class Aplicacion:
         self.tree_personas.grid(row=0, column=0, sticky='nsew')
         vsb.grid(row=0, column=1, sticky='ns')
         hsb.grid(row=1, column=0, sticky='ew')
-# Ajustar el ancho de las columnas dinámicamente
+        
+        # Ajustar el ancho de las columnas dinámicamente
         def ajustar_ancho_columnas(event):
             ancho_total = self.tree_personas.winfo_width()  # Ancho total del Treeview
             for col in self.tree_personas['columns']:
                 self.tree_personas.column(col, width=int(ancho_total * 0.15))  # Ajustar proporcionalmente
 
-# Vincular el evento de redimensionamiento
+        # Vincular el evento de redimensionamiento
         self.tree_personas.bind('<Configure>', ajustar_ancho_columnas)
 
-        # Frame derecho para búsqueda y filtros
-        search_frame = ttk.LabelFrame(main_frame, text="Búsqueda y Filtros", padding=10)
-        search_frame.grid(row=0, column=1, sticky='nsew', padx=(5, 0))
-        
+            # Frame derecho para búsqueda y filtros
+        search_frame = ttk.LabelFrame(main_frame, text="Búsqueda y Filtros", padding=(10, 5))
+        search_frame.grid(row=0, column=1, sticky='nw', padx=(5, 0))
+
         # Estilo para los widgets de búsqueda
         style = ttk.Style()
         style.configure('Search.TFrame', padding=5)
-        style.configure('Search.TLabel', font=('Helvetica', 9))
-        style.configure('Search.TButton', padding=5)
+        style.configure('Search.TLabel', font=('Helvetica', 10), foreground='#333333')  # Fuente más grande y color oscuro
+        style.configure('Search.TButton', font=('Helvetica', 10), padding=8, background='#4CAF50', foreground='white')  # Botones verdes
+        style.map('Search.TButton', background=[('active', '#45a049')])  # Cambio de color al hacer hover
 
         # Reorganizar filtros de búsqueda
         search_frame.grid_columnconfigure(0, weight=1)
         search_frame.grid_columnconfigure(1, weight=1)
 
         # Nombre
-        ttk.Label(search_frame, text="Nombre:", style='Search.TLabel').grid(row=0, column=0, sticky='w')
-        self.combobox_nombre = ttk.Combobox(search_frame, width=25)
-        self.combobox_nombre.grid(row=0, column=1, sticky='ew')
+        ttk.Label(search_frame, text="Nombre:", style='Search.TLabel').grid(row=0, column=0, sticky='w', pady=(0, 5))
+        self.combobox_nombre = ttk.Combobox(search_frame, width=25, font=('Helvetica', 10))
+        self.combobox_nombre.grid(row=0, column=1, sticky='ew', pady=(0, 5))
         self.combobox_nombre.bind('<Return>', self.filtrar_personas)
         self.combobox_nombre.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Artículo
-        ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').grid(row=1, column=0, sticky='w')
-        self.entry_buscar_articulo = ttk.Entry(search_frame, width=25)
-        self.entry_buscar_articulo.grid(row=1, column=1, sticky='ew')
+        ttk.Label(search_frame, text="Artículo:", style='Search.TLabel').grid(row=1, column=0, sticky='w', pady=(0, 5))
+        self.entry_buscar_articulo = ttk.Entry(search_frame, width=25, font=('Helvetica', 10))
+        self.entry_buscar_articulo.grid(row=1, column=1, sticky='ew', pady=(0, 5))
         self.entry_buscar_articulo.bind('<Return>', self.filtrar_personas)
 
         # Municipio
-        ttk.Label(search_frame, text="Municipio:", style='Search.TLabel').grid(row=2, column=0, sticky='w')
-        self.combobox_municipio = ttk.Combobox(search_frame, values=[''] + self.municipios, width=25)
-        self.combobox_municipio.grid(row=2, column=1, sticky='ew')
+        ttk.Label(search_frame, text="Municipio:", style='Search.TLabel').grid(row=2, column=0, sticky='w', pady=(0, 5))
+        self.combobox_municipio = ttk.Combobox(search_frame, values=[''] + self.municipios, width=25, font=('Helvetica', 10))
+        self.combobox_municipio.grid(row=2, column=1, sticky='ew', pady=(0, 5))
         self.combobox_municipio.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Estado
-        ttk.Label(search_frame, text="Estado:", style='Search.TLabel').grid(row=3, column=0, sticky='w')
-        self.combo_estado = ttk.Combobox(search_frame, values=['Todos', 'Entregado', 'Pendiente'], width=25)
+        ttk.Label(search_frame, text="Estado:", style='Search.TLabel').grid(row=3, column=0, sticky='w', pady=(0, 5))
+        self.combo_estado = ttk.Combobox(search_frame, values=['Todos', 'Entregado', 'Pendiente'], width=25, font=('Helvetica', 10))
         self.combo_estado.set('Todos')
-        self.combo_estado.grid(row=3, column=1, sticky='ew')
+        self.combo_estado.grid(row=3, column=1, sticky='ew', pady=(0, 5))
         self.combo_estado.bind('<<ComboboxSelected>>', self.filtrar_personas)
 
         # Separador
         ttk.Separator(search_frame, orient='horizontal').grid(row=4, column=0, columnspan=2, sticky='ew', pady=10)
 
         # Botones de acción
-        search_button = ttk.Button(search_frame, 
-                                 text="Buscar", 
-                                 command=lambda: self.filtrar_personas(None),
-                                 style='Search.TButton')
-        search_button.grid(row=5, column=0, columnspan=2, sticky='ew', pady=5)
+        search_button = ttk.Button(
+            search_frame,
+            text="Buscar",
+            command=lambda: self.filtrar_personas(None),
+            style='Search.TButton'
+        )
+        search_button.grid(row=5, column=0, columnspan=2, sticky='ew', pady=(5, 5))
 
-        export_button = ttk.Button(search_frame, 
-                                 text="Exportar a Excel", 
-                                 command=self.exportar_a_excel,
-                                 style='Search.TButton')
-        export_button.grid(row=6, column=0, columnspan=2, sticky='ew', pady=5)
+        export_button = ttk.Button(
+            search_frame,
+            text="Exportar a Excel",
+            command=self.exportar_a_excel,
+            style='Search.TButton'
+        )
+        export_button.grid(row=6, column=0, columnspan=2, sticky='ew', pady=(0, 5))
 
         # Configurar el menú contextual
         self.menu_contextual = tk.Menu(self.root, tearoff=0)
         self.menu_contextual.configure(
-            font=('Helvetica', 10),
-            bg='#ffffff',
-            fg='#333333',
-            activebackground='#e1f5fe',
-            activeforeground='#000000',
-            relief='flat',
-            bd=1
-        )
+                    font=('Helvetica', 10),
+                    bg='#ffffff',
+                    fg='#333333',
+                    activebackground='#e1f5fe',
+                    activeforeground='#000000',
+                    relief='flat',
+                    bd=1
+                )
         
         # Agregar opciones al menú
         self.menu_contextual.add_command(
