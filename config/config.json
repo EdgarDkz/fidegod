@@ -1,0 +1,42 @@
+{
+    "app": {
+        "name": "FIDEGOD",
+        "version": "1.0.0",
+        "company": "FIDEGOD",
+        "description": "Sistema de Gestión para Inventario y Pedidos"
+    },
+    "ui": {
+        "theme": "orange",
+        "font_size": "medium",
+        "show_toolbar": true,
+        "show_statusbar": true,
+        "show_quick_access": true,
+        "window_size": {
+            "width": 200,
+            "height": 161
+        },
+        "maximized": true
+    },
+    "database": {
+        "type": "sqlite",
+        "path": "database.db",
+        "host": "localhost",
+        "port": 3306,
+        "name": "fidegod",
+        "user": "",
+        "password": ""
+    },
+    "paths": {
+        "logs": "logs",
+        "exports": "exports",
+        "reports": "reports",
+        "backups": "backups"
+    },
+    "features": {
+        "auto_backup": true,
+        "backup_interval_days": 7,
+        "check_updates": true,
+        "auto_save": true,
+        "save_interval_minutes": 5
+    }
+}

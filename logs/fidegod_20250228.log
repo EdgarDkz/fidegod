@@ -1,0 +1,275 @@
+2025-02-28 01:08:54,189 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:08:54,194 - root - INFO - Configuración guardada en C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:08:54,195 - root - INFO - Archivo de configuración no encontrado, se ha creado uno nuevo
+2025-02-28 01:08:59,045 - root - ERROR - Error al obtener configuración paths.{'logs': 'logs', 'exports': 'exports', 'reports': 'reports', 'backups': 'backups'}: unhashable type: 'dict'
+2025-02-28 01:08:59,046 - root - ERROR - Error: 'NoneType' object has no attribute 'items'
+2025-02-28 01:08:59,047 - root - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\main.py", line 46, in initialize_application
+    create_required_directories()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\main.py", line 104, in create_required_directories
+    for dir_name, dir_path in paths_config.items():
+                              ^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'items'
+
+2025-02-28 01:10:55,059 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:10:55,061 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:11:00,081 - root - INFO - Directorio creado: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\exports
+2025-02-28 01:11:00,082 - root - INFO - Directorio creado: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\reports
+2025-02-28 01:11:00,083 - root - INFO - Directorio creado: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\backups
+2025-02-28 01:14:46,886 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:14:46,888 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:21:21,105 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:21:21,107 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:22:45,345 - root - INFO - Configuración guardada en C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:26:11,759 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:26:11,765 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:26:52,355 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:31:13,355 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:31:13,357 - root - INFO - Directorio de iconos creado: c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\icons
+2025-02-28 01:31:13,358 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:37:55,954 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:37:55,957 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:38:07,383 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:45:31,060 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:45:31,062 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:46:10,753 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:46:22,029 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:49:10,386 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:49:10,389 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:49:21,655 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:50:00,197 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:50:00,200 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:51:54,384 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:52:03,513 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:52:03,519 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:52:04,801 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:52:04,803 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:52:12,198 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:52:14,155 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 01:52:17,247 - root - INFO - Sistema de logging inicializado
+2025-02-28 01:52:17,249 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:00:27,027 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:00:45,604 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:00:45,606 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:04:06,786 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:04:06,788 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:04:26,600 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:04:31,943 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:04:38,972 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:04:38,974 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:10:59,425 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:10:59,427 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:11:23,708 - root - INFO - Configuración guardada en C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:13:24,947 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:13:24,947 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:13:26,488 - root - ERROR - Error: name 'filters_frame' is not defined
+2025-02-28 02:13:26,488 - root - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\main.py", line 70, in initialize_application
+    app = MainView(root, theme_manager, elegant_styles)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 81, in __init__
+    self.setup_ui()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 216, in setup_ui
+    self.load_tab_content(0)
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 782, in load_tab_content
+    self.personas_view = PersonasView(self.personas_frame, self.style)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\personas_view.py", line 523, in __init__
+    self._setup_ui()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\personas_view.py", line 910, in _setup_ui
+    self.filter_panel = FilterPanel(self.main_frame, self)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\personas_view.py", line 88, in __init__
+    self._create_filter_widgets(filter_container)
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\personas_view.py", line 132, in _create_filter_widgets
+    ttk.Separator(filters_frame, orient='horizontal').pack(fill='x', pady=(10, 10))
+                  ^^^^^^^^^^^^^
+NameError: name 'filters_frame' is not defined
+
+2025-02-28 02:14:07,109 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:14:07,111 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:14:25,724 - root - INFO - Configuración guardada en C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:14:39,285 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:14:39,288 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:15:45,881 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:15:46,659 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:18:03,470 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:18:03,472 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:32:46,592 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:32:46,594 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:32:51,592 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:33:00,400 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:33:00,403 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:33:09,118 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:33:31,523 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:33:31,526 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:33:35,080 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:36:08,799 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:36:08,802 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:39:14,349 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:39:14,351 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:39:18,648 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:39:26,772 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:39:26,774 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:39:34,116 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:40:22,733 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:40:22,735 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:41:27,455 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:42:28,604 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:42:28,606 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:42:47,819 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:43:06,706 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:43:06,709 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:43:13,257 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:43:59,327 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:43:59,330 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:44:23,420 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:45:26,949 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:45:26,951 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:45:31,389 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:45:31,392 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:46:16,289 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:46:21,371 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:46:21,373 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:46:38,087 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:46:42,116 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:46:42,119 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:47:24,495 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:54:15,848 - root - INFO - Sistema de logging inicializado
+2025-02-28 02:54:15,851 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 02:54:28,580 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:00:07,109 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:00:07,110 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:00:38,702 - root - INFO - Configuración guardada en C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:00:57,349 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:00:57,356 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:02:41,196 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:02:41,198 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:02:52,523 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:03:01,938 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:03:01,942 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:03:22,588 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:03:22,591 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:03:29,042 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:04:04,129 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:04:04,132 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:04:10,918 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:04:22,585 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:04:22,588 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:04:35,710 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:04:56,850 - root - INFO - Sistema de logging inicializado
+2025-02-28 03:04:56,853 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 03:05:51,930 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:35:28,953 - root - INFO - Sistema de logging inicializado
+2025-02-28 14:35:28,958 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:35:47,621 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:36:02,334 - root - INFO - Sistema de logging inicializado
+2025-02-28 14:36:02,334 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:36:13,096 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:48:58,653 - root - INFO - Sistema de logging inicializado
+2025-02-28 14:48:58,654 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:48:59,556 - root - WARNING - No se pudo cargar el icono de la aplicación: can't use "pyimage2" as iconphoto: not a photo image
+2025-02-28 14:48:59,728 - root - INFO - Vista 'personas' registrada en el gestor de estilos
+2025-02-28 14:48:59,728 - root - INFO - Vista 'inventario' registrada en el gestor de estilos
+2025-02-28 14:48:59,728 - root - INFO - Vista 'transacciones' registrada en el gestor de estilos
+2025-02-28 14:48:59,760 - root - ERROR - Error: image "pyimage3" doesn't exist
+2025-02-28 14:48:59,760 - root - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\main.py", line 70, in initialize_application
+    app = MainView(root, theme_manager, elegant_styles)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 93, in __init__
+    self.setup_ui()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 194, in setup_ui
+    self.setup_menu()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 237, in setup_menu
+    file_menu.add_command(label="Nuevo", command=self.on_new, accelerator="Ctrl+N", image=self.icons.get('new'), compound=tk.LEFT)
+  File "C:\Users\edgar\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 3368, in add_command
+    self.add('command', cnf or kw)
+  File "C:\Users\edgar\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 3355, in add
+    self.tk.call((self._w, 'add', itemType) +
+_tkinter.TclError: image "pyimage3" doesn't exist
+
+2025-02-28 14:51:57,640 - root - INFO - Sistema de logging inicializado
+2025-02-28 14:51:57,642 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:51:58,504 - root - WARNING - No se pudo cargar el icono de la aplicación: can't use "pyimage2" as iconphoto: not a photo image
+2025-02-28 14:51:58,680 - root - INFO - Vista 'personas' registrada en el gestor de estilos
+2025-02-28 14:51:58,680 - root - INFO - Vista 'inventario' registrada en el gestor de estilos
+2025-02-28 14:51:58,680 - root - INFO - Vista 'transacciones' registrada en el gestor de estilos
+2025-02-28 14:51:58,699 - root - ERROR - Error: image "pyimage3" doesn't exist
+2025-02-28 14:51:58,699 - root - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\main.py", line 70, in initialize_application
+    app = MainView(root, theme_manager, elegant_styles)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 94, in __init__
+    self.setup_ui()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 213, in setup_ui
+    self.setup_menu()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 275, in setup_menu
+    add_menu_command(file_menu, "Nuevo", self.on_new, "Ctrl+N", 'new')
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 272, in add_menu_command
+    menu.add_command(**kwargs)
+  File "C:\Users\edgar\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 3368, in add_command
+    self.add('command', cnf or kw)
+  File "C:\Users\edgar\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 3355, in add
+    self.tk.call((self._w, 'add', itemType) +
+_tkinter.TclError: image "pyimage3" doesn't exist
+
+2025-02-28 14:57:56,856 - root - INFO - Sistema de logging inicializado
+2025-02-28 14:57:56,858 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:57:57,799 - root - WARNING - No se pudo cargar el icono de la aplicación: can't use "pyimage2" as iconphoto: not a photo image
+2025-02-28 14:57:57,981 - root - INFO - Vista 'personas' registrada en el gestor de estilos
+2025-02-28 14:57:57,981 - root - INFO - Vista 'inventario' registrada en el gestor de estilos
+2025-02-28 14:57:57,981 - root - INFO - Vista 'transacciones' registrada en el gestor de estilos
+2025-02-28 14:57:57,982 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\home.png
+2025-02-28 14:57:57,982 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\person.png
+2025-02-28 14:57:57,983 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\inventory.png
+2025-02-28 14:57:57,983 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\transaction.png
+2025-02-28 14:57:57,983 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\new.png
+2025-02-28 14:57:57,983 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\open.png
+2025-02-28 14:57:57,984 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\save.png
+2025-02-28 14:57:57,984 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\print.png
+2025-02-28 14:57:57,984 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\search.png
+2025-02-28 14:57:57,984 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\settings.png
+2025-02-28 14:57:57,985 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\about.png
+2025-02-28 14:57:57,985 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\help.png
+2025-02-28 14:57:57,985 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\exit.png
+2025-02-28 14:57:57,985 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\notification.png
+2025-02-28 14:57:57,985 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\warning.png
+2025-02-28 14:57:57,986 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\error.png
+2025-02-28 14:57:57,986 - root - WARNING - El archivo de icono no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\success.png
+2025-02-28 14:57:57,987 - root - WARNING - El logo de la aplicación no existe: C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\assets\icons\..\logo.png
+2025-02-28 14:58:07,819 - root - ERROR - Error al cambiar de pestaña: 'MainView' object has no attribute 'status_message'
+2025-02-28 14:58:11,559 - root - ERROR - Error al cambiar de pestaña: invalid command name ".!frame.!frame.!notebook"
+2025-02-28 14:58:12,726 - root - ERROR - Error al cambiar de pestaña: invalid command name ".!frame.!frame.!notebook"
+2025-02-28 14:58:14,073 - root - ERROR - Error al cambiar de pestaña: invalid command name ".!frame.!frame.!notebook"
+2025-02-28 14:58:16,348 - root - ERROR - Error al cambiar de pestaña: invalid command name ".!frame.!frame.!notebook"
+2025-02-28 14:58:18,044 - root - ERROR - Error: invalid command name ".!frame.!frame.!notebook"
+2025-02-28 14:58:18,044 - root - ERROR - Traceback: Traceback (most recent call last):
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\main.py", line 70, in initialize_application
+    app = MainView(root, theme_manager, elegant_styles)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 100, in __init__
+    self.update_status_bar()
+  File "C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\views\main_view.py", line 536, in update_status_bar
+    current_tab = self.notebook.index(self.notebook.select())
+                                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\edgar\AppData\Local\Programs\Python\Python311\Lib\tkinter\ttk.py", line 860, in select
+    return self.tk.call(self._w, "select", tab_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_tkinter.TclError: invalid command name ".!frame.!frame.!notebook"
+
+2025-02-28 14:58:53,562 - root - INFO - Sistema de logging inicializado
+2025-02-28 14:58:53,562 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 14:59:04,884 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 15:05:34,847 - root - INFO - Sistema de logging inicializado
+2025-02-28 15:05:34,848 - root - INFO - Configuración cargada desde C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 15:09:01,055 - root - INFO - Configuración guardada en C:\Users\edgar\OneDrive\Escritorio\FIDEGOD\config\config.json
+2025-02-28 18:58:44,599 - root - INFO - Sistema de logging inicializado
+2025-02-28 18:58:44,607 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\FIDEGOD - copia (2)\config\config.json
+2025-02-28 19:00:40,365 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\FIDEGOD - copia (2)\config\config.json
+2025-02-28 19:05:49,224 - root - INFO - Sistema de logging inicializado
+2025-02-28 19:05:49,227 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\Fidecitrus\config\config.json
+2025-02-28 19:06:10,626 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\Fidecitrus\config\config.json
+2025-02-28 19:07:52,447 - root - INFO - Sistema de logging inicializado
+2025-02-28 19:07:52,460 - root - INFO - Configuración cargada desde c:\Users\edgar\OneDrive\Escritorio\Fidecitrus\config\config.json
+2025-02-28 19:08:44,019 - root - INFO - Configuración guardada en c:\Users\edgar\OneDrive\Escritorio\Fidecitrus\config\config.json
